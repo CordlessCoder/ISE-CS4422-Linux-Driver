@@ -2,11 +2,11 @@
 
 A simple password manager with encryption implemented in kernel-space as a device driver.
 
-The encryption will be implemented using XChaCha20-Poly1305,
+The encryption will be implemented using ChaCha20,
 following the [OWASP Secrets Management guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html#71-encryption-types-to-use) .
 
 Key derivation will be implemented using [Argon2id with the parameters `m=47104, t=1, p=1`](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id).
-NOTE: Make sure to set argon2id to generate a 256-bit(32-byte) key, since that's what XChaCha20 expects.
+NOTE: Make sure to set argon2id to generate a 256-bit(32-byte) key, since that's what ChaCha20 expects.
 
 ## Driver Usage Example
 ```c
@@ -21,7 +21,7 @@ kdf = argon2id.from_parameters(m=47104, t=1, p=1)
 // Key derivation(turns the password into the 256-bit key)
 key = kdf.hash(passphrase)
 
-encryption_device = open("/dev/xchacha")
+encryption_device = open("/dev/chacha")
 ioctl(encryption_device, SET_KEY, &key)
 ioctl(encryption_device, SET_NONCE, &nonce)
 
@@ -41,10 +41,10 @@ close(encryption_device)
 ```
 
 ## Tasks
-- [ ] XChaCha20-Poly1305 device driver(`/dev/xchacha`)
+- [ ] ChaCha20 device driver(`/dev/chacha`)
 - [ ] Command-Line Interface password manager
 - [ ] Graphical Interface
-- [ ] Statistics exposed via procfs(`/proc/xchacha`)
+- [ ] Statistics exposed via procfs(`/proc/chacha`)
 - [ ] Live procfs statistic visualization
 - [ ] DevOps: Compiling everything in a github action
 - [ ] DevOps: Linting with `clang-tidy`
