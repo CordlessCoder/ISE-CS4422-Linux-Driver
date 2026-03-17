@@ -8,7 +8,6 @@
 #include "linux/dynamic_debug.h"
 #include "linux/errno.h"
 #include "linux/mutex.h"
-#include "linux/notifier.h"
 #include "linux/printk.h"
 #include "linux/uaccess.h"
 #include "linux/wait_bit.h"
@@ -134,16 +133,25 @@ static ssize_t chacha_read(struct file* f, char __user* user_buf, size_t len, lo
         state->len -= can_read;
     }
 
+    wake_up_var_locked(&state->start, &state->lock);
     mutex_unlock(&state->lock);
     return output;
 }
 
 static ssize_t chacha_write(struct file* f, const char __user* user_buf, size_t len, loff_t* offset) {
+    if (!len) {
+        return 0;
+    }
     chacha_state* state = f->private_data;
     if (mutex_lock_interruptible(&state->lock)) {
         return -ERESTARTSYS;
     }
     dev_info(dev_instance, "write(%zu) called", len);
+
+    // Wait for buffer to become non-full
+    if (wait_var_event_any_lock(&state->start, state->len != BUF_CAPACITY, &state->lock, mutex, TASK_INTERRUPTIBLE)) {
+        return -ERESTARTSYS;
+    };
     size_t copied = 0;
     while (len) {
         size_t remaining_space_in_buffer = BUF_CAPACITY - state->len;
