@@ -71,10 +71,10 @@ typedef struct {
 
 
 static void salsa20_wordtobyte(u8 output[64], const u32 input[16]);
-void ChaCha20_set_key(ChaCha20Ctx* x, const u8 k[32]);
-void ChaCha20_set_nonce(ChaCha20Ctx* x, const u8 nonce[8]);
-void ChaCha20_set_counter(ChaCha20Ctx* x, u64 counter);
-u64 ChaCha20_get_counter(ChaCha20Ctx* x);
+void ChaCha20_set_key(ChaCha20Ctx* ctx, const u8 k[32]);
+void ChaCha20_set_nonce(ChaCha20Ctx* ctx, const u8 nonce[8]);
+void ChaCha20_set_counter(ChaCha20Ctx* ctx, u64 counter);
+u64 ChaCha20_get_counter(ChaCha20Ctx* crx);
 void ChaCha20_xor(ChaCha20Ctx* ctx, u8* data, size_t bytes);
 void ChaCha20_xorblock(ChaCha20Ctx* ctx, u8 data[64]);
 
@@ -99,40 +99,40 @@ static void salsa20_wordtobyte(u8 output[64], const u32 input[16]) {
     memcpy(output, x, sizeof(x));
 }
 
-void ChaCha20_set_key(ChaCha20Ctx* x, const u8 k[32]) {
+void ChaCha20_set_key(ChaCha20Ctx* ctx, const u8 k[32]) {
     u32 key[8] = {};
     memcpy(key, k, sizeof(*k));
-    x->input[4] = le32_to_cpup(key + 0);
-    x->input[5] = le32_to_cpup(key + 1);
-    x->input[6] = le32_to_cpup(key + 2);
-    x->input[7] = le32_to_cpup(key + 3);
-    x->input[8] = le32_to_cpup(key + 4);
-    x->input[9] = le32_to_cpup(key + 5);
-    x->input[10] = le32_to_cpup(key + 6);
-    x->input[11] = le32_to_cpup(key + 7);
+    ctx->input[4] = le32_to_cpup(key + 0);
+    ctx->input[5] = le32_to_cpup(key + 1);
+    ctx->input[6] = le32_to_cpup(key + 2);
+    ctx->input[7] = le32_to_cpup(key + 3);
+    ctx->input[8] = le32_to_cpup(key + 4);
+    ctx->input[9] = le32_to_cpup(key + 5);
+    ctx->input[10] = le32_to_cpup(key + 6);
+    ctx->input[11] = le32_to_cpup(key + 7);
     const u32 sigma[4] = {0x61707865, 0x3320646e, 0x79622d32, 0x6b206574};
-    x->input[0] = sigma[0];
-    x->input[1] = sigma[1];
-    x->input[2] = sigma[2];
-    x->input[3] = sigma[3];
+    ctx->input[0] = sigma[0];
+    ctx->input[1] = sigma[1];
+    ctx->input[2] = sigma[2];
+    ctx->input[3] = sigma[3];
 }
 
-void ChaCha20_set_nonce(ChaCha20Ctx* x, const u8 nonce[8]) {
+void ChaCha20_set_nonce(ChaCha20Ctx* ctx, const u8 nonce[8]) {
     u32 n[2] = {};
     memcpy(n, nonce, sizeof(*n));
-    x->input[12] = 0;
-    x->input[13] = 0;
-    x->input[14] = le32_to_cpup(n + 0);
-    x->input[15] = le32_to_cpup(n + 1);
+    ctx->input[12] = 0;
+    ctx->input[13] = 0;
+    ctx->input[14] = le32_to_cpup(n + 0);
+    ctx->input[15] = le32_to_cpup(n + 1);
 }
 
-void ChaCha20_set_counter(ChaCha20Ctx* x, u64 counter) {
+void ChaCha20_set_counter(ChaCha20Ctx* ctx, u64 counter) {
     cpu_to_le64s(&counter);
-    x->input[12] = counter >> 32;
-    x->input[13] = U32V(counter);
+    ctx->input[12] = counter >> 32;
+    ctx->input[13] = U32V(counter);
 }
 
-u64 ChaCha20_get_counter(ChaCha20Ctx* x) { return ((u64)x->input[13] << 32) | (((u64)x->input[12])); }
+u64 ChaCha20_get_counter(ChaCha20Ctx* ctx) { return ((u64)ctx->input[13] << 32) | (((u64)ctx->input[12])); }
 
 void ChaCha20_xorblock(ChaCha20Ctx* ctx, u8 data[64]) {
     u8 output[64];

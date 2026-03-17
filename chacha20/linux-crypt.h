@@ -1,10 +1,6 @@
-#include "linux/byteorder/generic.h"
-#include "linux/types.h"
-
-#define u8 __u8
-#define u16 __u16
-#define u32 __u32
-#define u64 __u64
+// #include "linux/types.h"
+// #include "linux/byteorder/little_endian.h"
+// #include "linux/byteorder/generic.h"
 
 #define U8C(v)  ((u8)(v))
 #define U16C(v) ((u16)(v))
