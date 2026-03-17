@@ -2,50 +2,49 @@
 
 A simple password manager with encryption implemented in kernel-space as a device driver.
 
-The encryption will be implemented using AES-256 in GCM mode,
-following the [OWASP Cryptographic Storage guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html).
+The encryption will be implemented using XChaCha20-Poly1305,
+following the [OWASP Secrets Management guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html#71-encryption-types-to-use) .
 
 Key derivation will be implemented using [Argon2id with the parameters `m=47104, t=1, p=1`](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id).
-NOTE: Make sure to set argon2id to generate a 256-bit(32-byte) key, since that's what AES-256 expects.
+NOTE: Make sure to set argon2id to generate a 256-bit(32-byte) key, since that's what XChaCha20 expects.
 
 ## Driver Usage Example
 ```c
 passphrase = "I AM AN EXAMPLE PASSPHRASE"
 data_to_be_encrypted = "some_bytes"
+// The nonce, needs to be stored with the encrypted data to recover the original.
+nonce = cryptographic_rng.generate(24 bytes)
 
 // fixed hashing setup
 kdf = argon2id.from_parameters(m=47104, t=1, p=1)
-salt = "this must be some fixed byte-string"
 
 // Key derivation(turns the password into the 256-bit key)
 key = kdf.hash(passphrase)
 
-aes_device = open("/dev/aes")
-ioctl(aes_device, SET_KEY, &key)
-action = AES_ENCRYPT
-ioctl(aes_device, SET_AES_ACTION, &action)
+encryption_device = open("/dev/xchacha")
+ioctl(encryption_device, SET_KEY, &key)
+ioctl(encryption_device, SET_NONCE, &nonce)
 
 // Hand the data over to the device to be encrypted
-write(aes_device, data_to_be_encrypted)
+write(encryption_device, data_to_be_encrypted)
 
-encrypted_result = read(aes_device)
+encrypted_result = read(encryption_device)
 
-// Undo the encryption using the key
-action = AES_DECRYPT
-ioctl(aes_device, SET_AES_ACTION, &action)
+// Undo the encryption by passing the data through the device again
+ioctl(encryption_device, RESET_COUNTER)
 
-write(aes_device, encrypted_result)
-decrypted_data = read(aes_device)
+write(encryption_device, encrypted_result)
+decrypted_data = read(encryption_device)
 
 assert(decrypted_data == data_to_be_encrypted)
-close(aes_device)
+close(encryption_device)
 ```
 
 ## Tasks
-- [ ] AES-256-GCM device driver(`/dev/aes`)
+- [ ] XChaCha20-Poly1305 device driver(`/dev/xchacha`)
 - [ ] Command-Line Interface password manager
 - [ ] Graphical Interface
-- [ ] Statistics exposed via procfs(`/proc/aes`)
+- [ ] Statistics exposed via procfs(`/proc/xchacha`)
 - [ ] Live procfs statistic visualization
 - [ ] DevOps: Compiling everything in a github action
 - [ ] DevOps: Linting with `clang-tidy`
