@@ -6,9 +6,7 @@ D. J. Bernstein
 Public domain.
 */
 
-#define CHACHA20_KEYSIZE 256 /* [edit] */
-
-#define ECRYPT_MAXIVSIZE 64 /* [edit] */
+#define CHACHA20_KEYSIZE 256
 
 typedef struct {
     u32 input[16];
@@ -70,15 +68,16 @@ typedef struct {
     x[b] = ROTATE(XOR(x[b], x[c]), 7);
 
 
-static void salsa20_wordtobyte(u8 output[64], const u32 input[16]);
+static void salsa20_wordtobyte(u8 output[CHACHA20_BLOCKLENGTH], const u32 input[16]);
 void ChaCha20_set_key(ChaCha20Ctx* ctx, const u8 k[32]);
 void ChaCha20_set_nonce(ChaCha20Ctx* ctx, const u8 nonce[8]);
 void ChaCha20_set_counter(ChaCha20Ctx* ctx, u64 counter);
+void ChaCha20_increment_counter(ChaCha20Ctx* ctx);
 u64 ChaCha20_get_counter(ChaCha20Ctx* crx);
 void ChaCha20_xor(ChaCha20Ctx* ctx, u8* data, size_t bytes);
-void ChaCha20_xorblock(ChaCha20Ctx* ctx, u8 data[64]);
+void ChaCha20_xorblock_noinc(ChaCha20Ctx* ctx, u8 data[CHACHA20_BLOCKLENGTH]);
 
-static void salsa20_wordtobyte(u8 output[64], const u32 input[16]) {
+static void salsa20_wordtobyte(u8 output[CHACHA20_BLOCKLENGTH], const u32 input[16]) {
     u32 x[16] = {};
     memcpy(x, input, sizeof(x));
 
@@ -134,40 +133,32 @@ void ChaCha20_set_counter(ChaCha20Ctx* ctx, u64 counter) {
 
 u64 ChaCha20_get_counter(ChaCha20Ctx* ctx) { return ((u64)ctx->input[13] << 32) | (((u64)ctx->input[12])); }
 
-void ChaCha20_xorblock(ChaCha20Ctx* ctx, u8 data[64]) {
-    u8 output[64];
-    int i;
-
-    salsa20_wordtobyte(output, ctx->input);
+void ChaCha20_increment_counter(ChaCha20Ctx* ctx) {
     ctx->input[12] = PLUSONE(ctx->input[12]);
     if (!ctx->input[12]) {
         ctx->input[13] = PLUSONE(ctx->input[13]);
     }
-    for (i = 0; i < 64; ++i)
+}
+
+void ChaCha20_xorblock_noinc(ChaCha20Ctx* ctx, u8 data[CHACHA20_BLOCKLENGTH]) {
+    u8 output[CHACHA20_BLOCKLENGTH];
+    int i;
+
+    salsa20_wordtobyte(output, ctx->input);
+    for (i = 0; i < CHACHA20_BLOCKLENGTH; ++i)
         data[i] ^= output[i];
 }
 
 void ChaCha20_xor(ChaCha20Ctx* ctx, u8* data, size_t bytes) {
-    u8 output[64];
-    size_t i;
+    u8 output[CHACHA20_BLOCKLENGTH] = {};
 
-    if (!bytes)
-        return;
-    for (;;) {
-        salsa20_wordtobyte(output, ctx->input);
-        ctx->input[12] = PLUSONE(ctx->input[12]);
-        if (!ctx->input[12]) {
-            ctx->input[13] = PLUSONE(ctx->input[13]);
-            /* stopping at 2^70 bytes per nonce is user's responsibility */
-        }
-        if (bytes <= 64) {
-            for (i = 0; i < bytes; ++i)
-                data[i] ^= output[i];
-            return;
-        }
-        for (i = 0; i < 64; ++i)
-            data[i] ^= output[i];
-        bytes -= 64;
-        data += 64;
+    while (bytes) {
+        size_t chunk = (bytes < CHACHA20_BLOCKLENGTH) ? bytes : CHACHA20_BLOCKLENGTH;
+        memcpy(output, data, chunk);
+        ChaCha20_xorblock_noinc(ctx, output);
+        ChaCha20_increment_counter(ctx);
+        memcpy(data, output, chunk);
+        bytes -= CHACHA20_BLOCKLENGTH;
+        data += CHACHA20_BLOCKLENGTH;
     }
 }
