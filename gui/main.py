@@ -1,33 +1,26 @@
 #!/usr/bin/env python3
-"""
-main.py — entry point for the passman GUI.
-Run with:  python3 main.py
-Requires:  PyGObject with GTK4  (sudo pacman -S python-gobject gtk4)
-"""
-
 import gi
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, Gio
+from gi.repository import Gtk
+
+import sys
+import os
 
 import backend
 from window import PassmanWindow
 
 
-class PassmanApp(Gtk.Application):
-    def __init__(self):
-        super().__init__(
-            application_id="com.passman.gui",
-            flags=Gio.ApplicationFlags.FLAGS_NONE,
-        )
+def main():
+    os.environ.setdefault("DBUS_SESSION_BUS_ADDRESS", "disabled:")
+    
+    app = Gtk.Application(application_id="com.passman.gui")
 
-    def do_activate(self):
-        win = PassmanWindow(application=self)
+    def on_activate(application):
+        win = PassmanWindow(application=application)
         win.present()
 
-
-def main():
-    app = PassmanApp()
-    app.run()
+    app.connect("activate", on_activate)
+    app.run(sys.argv)
 
 
 if __name__ == "__main__":
