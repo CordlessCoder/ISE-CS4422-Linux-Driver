@@ -13,7 +13,7 @@ atomic64_t lchacha_active_sessions = ATOMIC_INIT(0);
 atomic64_t lchacha_bytes_processed = ATOMIC_INIT(0);
 
 static int chacha_open(struct inode* _, struct file* f) {
-    dev_info(lchacha_dev, "Open is called\n");
+    dev_dbg(lchacha_dev, "Open is called\n");
     f->private_data = kcalloc(STATE_SIZE, 1, GFP_KERNEL_ACCOUNT);
     if (!f->private_data) {
         pr_err("chacha - Out of memory\n");
@@ -32,7 +32,7 @@ static int chacha_open(struct inode* _, struct file* f) {
 }
 
 static int chacha_release(struct inode* _, struct file* f) {
-    dev_info(lchacha_dev, "Release is called\n");
+    dev_dbg(lchacha_dev, "Release is called\n");
     {
         chacha_state* state = f->private_data;
         mutex_destroy(&state->lock);
@@ -42,14 +42,10 @@ static int chacha_release(struct inode* _, struct file* f) {
     return 0;
 }
 
-static struct file_operations fops = {.read = lchacha_read, .open = chacha_open, .write = lchacha_write, .release = chacha_release, .unlocked_ioctl = chacha_ioctl};
+static struct file_operations fops = {
+    .read = lchacha_read, .open = chacha_open, .write = lchacha_write, .release = chacha_release, .unlocked_ioctl = chacha_ioctl, .llseek = lchacha_lseek, .owner = THIS_MODULE};
 // File operations
-static const struct proc_ops proc_fops = {
-    .proc_open = lchacha_proc_open,
-    .proc_read = seq_read,
-    .proc_lseek = seq_lseek,
-    .proc_release = single_release,
-};
+static const struct proc_ops proc_fops = {.proc_open = lchacha_proc_open, .proc_read = seq_read, .proc_lseek = seq_lseek, .proc_release = single_release};
 
 
 static int __init dev_init(void) {

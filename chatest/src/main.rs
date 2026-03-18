@@ -1,7 +1,7 @@
 use std::{
     ffi::OsStr,
     fs::File,
-    io::{Read, Write},
+    io::{Read, Seek, SeekFrom, Write},
     os::{fd::AsRawFd, unix::ffi::OsStrExt},
     path::Path,
 };
@@ -41,25 +41,38 @@ fn test_message(message: &str) {
     let mut buf = ref_buf.clone();
     println!("Original: {}", Path::new(OsStr::from_bytes(&buf)).display());
 
-    chacha.write_all(&buf).unwrap();
     let third = buf.len() / 3;
-    chacha.read_exact(&mut buf[..third]).unwrap();
-    chacha.read_exact(&mut buf[third..]).unwrap();
+    std::thread::scope(|s| {
+        let mut chacha = &chacha;
+        let read_from = buf.clone();
+        s.spawn(move || {
+            chacha.write_all(&read_from).unwrap();
+        });
+        chacha.read_exact(&mut buf[..third]).unwrap();
+        chacha.read_exact(&mut buf[third..]).unwrap();
+    });
 
     reference.apply_keystream(&mut ref_buf);
 
     println!("Encrypted: {buf:?}",);
     println!("Encrypted(ref): {ref_buf:?}",);
+    if buf != ref_buf {
+        std::fs::write("eref", &ref_buf).unwrap();
+        std::fs::write("egot", &buf).unwrap();
+    }
     assert_eq!(buf, ref_buf);
 
-    unsafe {
-        cha_reset_counter(chacha.as_raw_fd()).unwrap();
-    }
-
+    chacha.seek(SeekFrom::Start(0)).unwrap();
     reference.seek(0);
-    chacha.write_all(&buf).unwrap();
-    chacha.read_exact(&mut buf[..third]).unwrap();
-    chacha.read_exact(&mut buf[third..]).unwrap();
+    std::thread::scope(|s| {
+        let mut chacha = &chacha;
+        let read_from = buf.clone();
+        s.spawn(move || {
+            chacha.write_all(&read_from).unwrap();
+        });
+        chacha.read_exact(&mut buf[..third]).unwrap();
+        chacha.read_exact(&mut buf[third..]).unwrap();
+    });
     reference.apply_keystream(&mut ref_buf);
     println!(
         "Decrypted: {}",
@@ -69,11 +82,19 @@ fn test_message(message: &str) {
         "Decrypted(ref): {}",
         Path::new(OsStr::from_bytes(&ref_buf)).display()
     );
+    if buf != ref_buf {
+        std::fs::write("ref", &ref_buf).unwrap();
+        std::fs::write("got", &buf).unwrap();
+    }
     assert_eq!(buf, ref_buf);
 }
 
 fn main() {
     test_message(&DATA[..20]);
     test_message(&DATA[..119]);
-    test_message(DATA);
+    let repeated = DATA.repeat(23);
+    for rep in 1..10000 {
+        test_message(&repeated);
+        test_message(&DATA.repeat(rep));
+    }
 }

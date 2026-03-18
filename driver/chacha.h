@@ -29,10 +29,9 @@ extern atomic64_t lchacha_bytes_processed;
 
 #define STATE_FIELDS                                                                                                                                                                                   \
     ChaCha20Ctx ctx;                                                                                                                                                                                   \
-    /* Offset within the current 64-byte ChaCha20 block */                                                                                                                                             \
-    u8 chacha_block_offset;                                                                                                                                                                            \
     struct mutex lock;                                                                                                                                                                                 \
     /* Circular buffer for data to be processed to be available for reading*/                                                                                                                          \
+    u64 offset;                                                                                                                                                                                        \
     u16 len;
 
 #define BUF_CAPACITY (STATE_SIZE - sizeof(struct {STATE_FIELDS}))
@@ -45,6 +44,7 @@ typedef struct {
 ssize_t lchacha_read(struct file* f, char __user* user_buf, size_t len, loff_t* offset);
 ssize_t lchacha_write(struct file* f, const char __user* user_buf, size_t len, loff_t* offset);
 ssize_t lchacha_proc_read(struct file* file, char __user* user_buffer, size_t count, loff_t* position);
+loff_t lchacha_lseek(struct file* f, loff_t offset, int whence);
 int lchacha_proc_open(struct inode* inode, struct file* file);
 
 #endif

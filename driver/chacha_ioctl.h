@@ -2,6 +2,7 @@
 #define CHACHA_IOCTL_H_
 
 #include "asm-generic/ioctl.h"
+#include <linux/fs.h>
 
 #define SET_KEY _IOW('s', 'k', char[32])
 #define SET_NONCE _IOW('s', 'n', char[8])
