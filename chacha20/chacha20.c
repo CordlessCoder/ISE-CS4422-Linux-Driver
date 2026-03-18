@@ -12,44 +12,6 @@ typedef struct {
     u32 input[16];
 } ChaCha20Ctx;
 
-/*
- * Encryption/decryption of arbitrary length messages.
- *
- * For efficiency reasons, the API provides two types of
- * encrypt/decrypt functions. The ECRYPT_encrypt_bytes() function
- * (declared here) encrypts byte strings of arbitrary length, while
- * the ECRYPT_encrypt_blocks() function (defined later) only accepts
- * lengths which are multiples of ECRYPT_BLOCKLENGTH.
- *
- * The user is allowed to make multiple calls to
- * ECRYPT_encrypt_blocks() to incrementally encrypt a long message,
- * but he is NOT allowed to make additional encryption calls once he
- * has called ECRYPT_encrypt_bytes() (unless he starts a new message
- * of course). For example, this sequence of calls is acceptable:
- *
- * ECRYPT_keysetup();
- *
- * ECRYPT_ivsetup();
- * ECRYPT_encrypt_blocks();
- * ECRYPT_encrypt_blocks();
- * ECRYPT_encrypt_bytes();
- *
- * ECRYPT_ivsetup();
- * ECRYPT_encrypt_blocks();
- * ECRYPT_encrypt_blocks();
- *
- * ECRYPT_ivsetup();
- * ECRYPT_encrypt_bytes();
- *
- * The following sequence is not:
- *
- * ECRYPT_keysetup();
- * ECRYPT_ivsetup();
- * ECRYPT_encrypt_blocks();
- * ECRYPT_encrypt_bytes();
- * ECRYPT_encrypt_blocks();
- */
-
 #define CHACHA20_BLOCKLENGTH 64
 
 #define ROTATE(v, c) (ROTL32(v, c))
