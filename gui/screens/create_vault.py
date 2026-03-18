@@ -41,14 +41,13 @@ class CreateVaultScreen(Gtk.Box):
         card.append(subtitle)
 
         # Passphrase
-        self._pass1 = Gtk.PasswordEntry()
-        self._pass1.set_show_peek_icon(True)
+        self._pass1 = Gtk.Entry()
+        self._pass1.set_visibility(False)
         self._pass1.set_placeholder_text("Master passphrase")
         card.append(self._pass1)
 
-        # Confirm
-        self._pass2 = Gtk.PasswordEntry()
-        self._pass2.set_show_peek_icon(True)
+        self._pass2 = Gtk.Entry()
+        self._pass2.set_visibility(False)
         self._pass2.set_placeholder_text("Confirm passphrase")
         self._pass2.connect("activate", self._on_submit)
         card.append(self._pass2)
