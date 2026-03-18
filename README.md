@@ -13,7 +13,7 @@ NOTE: Make sure to set argon2id to generate a 256-bit(32-byte) key, since that's
 passphrase = "I AM AN EXAMPLE PASSPHRASE"
 data_to_be_encrypted = "some_bytes"
 // The nonce, needs to be stored with the encrypted data to recover the original.
-nonce = cryptographic_rng.generate(24 bytes)
+nonce = cryptographic_rng.generate(8 bytes)
 
 // fixed hashing setup
 kdf = argon2id.from_parameters(m=47104, t=1, p=1)
