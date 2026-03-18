@@ -45,10 +45,8 @@ class UnlockScreen(Gtk.Box):
 
         # Passphrase field
         self._passphrase_entry = Gtk.PasswordEntry()
-        self._passphrase_entry.set_show_peek_icon(True)
+        self._passphrase_entry.set_visibility(True)
         self._passphrase_entry.set_placeholder_text("Master passphrase")
-        self._passphrase_entry.connect("activate", self._on_submit)
-        card.append(self._passphrase_entry)
 
         # Error label (hidden until needed)
         self._error_label = Gtk.Label(label="Incorrect passphrase, try again.")

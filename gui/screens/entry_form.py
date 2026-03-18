@@ -47,8 +47,8 @@ class EntryForm(Gtk.Box):
         # Password row with generator
         self.append(self._field_label("Password"))
         pass_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        self._password = Gtk.PasswordEntry()
-        self._password.set_show_peek_icon(True)
+        self._password = Gtk.Entry()
+        self._password.set_visibility(False)
         self._password.set_hexpand(True)
         pass_row.append(self._password)
 
