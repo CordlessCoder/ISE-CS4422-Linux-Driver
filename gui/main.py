@@ -11,8 +11,6 @@ from window import PassmanWindow
 
 
 def main():
-    os.environ.setdefault("DBUS_SESSION_BUS_ADDRESS", "disabled:")
-    
     app = Gtk.Application(application_id="com.passman.gui")
 
     def on_activate(application):
