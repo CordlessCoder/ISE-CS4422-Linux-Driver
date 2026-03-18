@@ -100,7 +100,7 @@ static void salsa20_wordtobyte(u8 output[CHACHA20_BLOCKLENGTH], const u32 input[
 
 void ChaCha20_set_key(ChaCha20Ctx* ctx, const u8 k[32]) {
     u32 key[8] = {};
-    memcpy(key, k, sizeof(*k));
+    memcpy(key, k, sizeof(key));
     ctx->input[4] = le32_to_cpup(key + 0);
     ctx->input[5] = le32_to_cpup(key + 1);
     ctx->input[6] = le32_to_cpup(key + 2);
@@ -114,15 +114,17 @@ void ChaCha20_set_key(ChaCha20Ctx* ctx, const u8 k[32]) {
     ctx->input[1] = sigma[1];
     ctx->input[2] = sigma[2];
     ctx->input[3] = sigma[3];
+    ChaCha20_set_counter(ctx, 0);
 }
 
 void ChaCha20_set_nonce(ChaCha20Ctx* ctx, const u8 nonce[8]) {
     u32 n[2] = {};
-    memcpy(n, nonce, sizeof(*n));
+    memcpy(n, nonce, sizeof(n));
     ctx->input[12] = 0;
     ctx->input[13] = 0;
     ctx->input[14] = le32_to_cpup(n + 0);
     ctx->input[15] = le32_to_cpup(n + 1);
+    ChaCha20_set_counter(ctx, 0);
 }
 
 void ChaCha20_set_counter(ChaCha20Ctx* ctx, u64 counter) {

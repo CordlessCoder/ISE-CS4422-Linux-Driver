@@ -1,9 +1,3 @@
-#include <linux/cdev.h>
-#include <linux/fs.h>
-#include <linux/init.h>
-#include <linux/module.h>
-
-#include "../chacha20/chacha20.c"
 #include "linux/dev_printk.h"
 #include "linux/dynamic_debug.h"
 #include "linux/errno.h"
@@ -11,6 +5,13 @@
 #include "linux/printk.h"
 #include "linux/uaccess.h"
 #include "linux/wait_bit.h"
+#include <linux/cdev.h>
+#include <linux/fs.h>
+#include <linux/init.h>
+#include <linux/module.h>
+
+#include "../chacha20/chacha20.c"
+#include "chacha_ioctl.h"
 
 static dev_t dev_number;
 static struct cdev cdev_instance;
@@ -179,8 +180,54 @@ static ssize_t chacha_write(struct file* f, const char __user* user_buf, size_t 
     return copied;
 }
 
+static long int chacha_ioctl(struct file* f, unsigned int cmd, unsigned long args) {
+    chacha_state* state = f->private_data;
+    dev_dbg(dev_instance, "ioctl called with cmd: 0x%x and args: %p\n", cmd, (void*)args);
+    int status = 0;
 
-static struct file_operations fops = {.read = chacha_read, .open = chacha_open, .write = chacha_write, .release = chacha_release};
+    switch (cmd) {
+    case SET_KEY: {
+        char key[32];
+        status = copy_from_user(key, (typeof(key)*)args, sizeof(key));
+        if (status) {
+            dev_err(dev_instance, "Error on SET_KEY\n");
+            return status;
+        }
+        ChaCha20_set_key(&state->ctx, key);
+    } break;
+    case SET_NONCE: {
+        char nonce[8];
+        status = copy_from_user(nonce, (typeof(nonce)*)args, sizeof(nonce));
+        if (status) {
+            dev_err(dev_instance, "Error on SET_NONCE\n");
+            return status;
+        }
+        ChaCha20_set_nonce(&state->ctx, nonce);
+    } break;
+    case RESET_COUNTER: {
+        ChaCha20_set_counter(&state->ctx, 0);
+        state->chacha_block_offset = 0;
+    } break;
+    case SET_COUNTER: {
+        u64 counter;
+        status = copy_from_user(&counter, (typeof(counter)*)args, sizeof(counter));
+        if (status) {
+            dev_err(dev_instance, "Error on SET_COUNTER\n");
+            return status;
+        }
+        state->chacha_block_offset = 0;
+        ChaCha20_set_counter(&state->ctx, counter);
+    } break;
+
+    default: {
+        return -EOPNOTSUPP;
+    } break;
+    }
+    return status;
+}
+
+
+static struct file_operations fops = {.read = chacha_read, .open = chacha_open, .write = chacha_write, .release = chacha_release, .unlocked_ioctl = chacha_ioctl};
 
 static int __init dev_init(void) {
     int status;
