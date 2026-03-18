@@ -60,8 +60,9 @@ ssize_t lchacha_write(struct file* f, const char __user* user_buf, size_t len, l
     dev_dbg(lchacha_dev, "write(%zu) called", len);
 
     // Wait for buffer to become non-full
-    if (wait_var_event_any_lock(&state->len, state->len != BUF_CAPACITY, &state->lock, mutex, TASK_INTERRUPTIBLE)) {
-        return -ERESTARTSYS;
+    int status = 0;
+    if ((status = wait_var_event_any_lock(&state->len, state->len != BUF_CAPACITY, &state->lock, mutex, TASK_INTERRUPTIBLE))) {
+        return status;
     };
     size_t output = 0;
     while (len) {

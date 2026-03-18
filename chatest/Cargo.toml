@@ -6,3 +6,5 @@ edition = "2024"
 [dependencies]
 chacha20 = { version = "0.10.0", features = ["legacy"] }
 nix = { version = "0.31.2", features = ["ioctl"] }
+rand = "0.10.0"
+signal-hook = "0.4.3"
