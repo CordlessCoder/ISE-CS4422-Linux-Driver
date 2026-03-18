@@ -1,18 +1,11 @@
 #include "linux-crypt.h"
 #include <linux/string.h>
+#include "chacha20.h"
 /*
 chacha-ref.c version 20080118
 D. J. Bernstein
 Public domain.
 */
-
-#define CHACHA20_KEYSIZE 256
-
-typedef struct {
-    u32 input[16];
-} ChaCha20Ctx;
-
-#define CHACHA20_BLOCKLENGTH 64
 
 #define ROTATE(v, c) (ROTL32(v, c))
 #define XOR(v, w) ((v) ^ (w))
@@ -29,15 +22,6 @@ typedef struct {
     x[c] = PLUS(x[c], x[d]);                                                                                                                                                                           \
     x[b] = ROTATE(XOR(x[b], x[c]), 7);
 
-
-static void salsa20_wordtobyte(u8 output[CHACHA20_BLOCKLENGTH], const u32 input[16]);
-void ChaCha20_set_key(ChaCha20Ctx* ctx, const u8 k[32]);
-void ChaCha20_set_nonce(ChaCha20Ctx* ctx, const u8 nonce[8]);
-void ChaCha20_set_counter(ChaCha20Ctx* ctx, u64 counter);
-void ChaCha20_increment_counter(ChaCha20Ctx* ctx);
-u64 ChaCha20_get_counter(ChaCha20Ctx* crx);
-void ChaCha20_xor(ChaCha20Ctx* ctx, u8* data, size_t bytes);
-void ChaCha20_xorblock_noinc(ChaCha20Ctx* ctx, u8 data[CHACHA20_BLOCKLENGTH]);
 
 static void salsa20_wordtobyte(u8 output[CHACHA20_BLOCKLENGTH], const u32 input[16]) {
     u32 x[16] = {};
