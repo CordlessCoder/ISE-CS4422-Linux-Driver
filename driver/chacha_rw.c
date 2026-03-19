@@ -137,7 +137,7 @@ ssize_t lchacha_write(struct file* f, const char __user* user_buf, size_t len, l
 // NOTE: This function will advance the offset by the amount it reads, do not do that outside of it!
 static void chacha_process(chacha_state* state, char* data, size_t len) {
     dev_dbg(lchacha_dev, "Processing ChaCha20, len = %zu, offset = %llu", len, state->offset);
-    atomic64_add(len, &lchacha_bytes_processed);
+    atomic64_add(len, &lchacha_stats.bytes_processed);
 
     char block[CHACHA20_BLOCKLENGTH] = {};
     while (len != 0) {
