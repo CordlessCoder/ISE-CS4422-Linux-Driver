@@ -135,7 +135,7 @@ loff_t lchacha_lseek(struct file* f, loff_t offset, int whence) {
     chacha_state* state = f->private_data;
     dev_dbg(lchacha_dev, "lseek called, current pos = %lld, action = %d, offset = %lld\n", f->f_pos, whence, offset);
 
-    int status = 0;
+    loff_t status = 0;
 
     if (mutex_lock_interruptible(&state->lock)) {
         return -ERESTARTSYS;
@@ -148,6 +148,7 @@ loff_t lchacha_lseek(struct file* f, loff_t offset, int whence) {
             goto unlock;
         }
         state->offset = offset;
+        status = state->offset;
     } break;
     case SEEK_CUR: {
         s64 temp = (s64)state->offset + (s64)offset;
@@ -156,6 +157,7 @@ loff_t lchacha_lseek(struct file* f, loff_t offset, int whence) {
             goto unlock;
         }
         state->offset = temp;
+        status = state->offset;
     } break;
     case SEEK_END: {
         status = -EOPNOTSUPP;
