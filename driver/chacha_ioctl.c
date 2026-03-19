@@ -43,6 +43,12 @@ long int chacha_ioctl(struct file* f, unsigned int cmd, unsigned long args) {
         state->offset = CHACHA20_BLOCKLENGTH * counter;
         ChaCha20_set_counter(&state->ctx, counter);
     } break;
+    case CLEAR_OUTPUT_ONLY: {
+        state->cipher_output_only = false;
+    } break;
+    case SET_OUTPUT_ONLY: {
+        state->cipher_output_only = true;
+    } break;
 
     default: {
         status = -EOPNOTSUPP;

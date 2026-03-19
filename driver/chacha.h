@@ -32,7 +32,9 @@ extern atomic64_t lchacha_bytes_processed;
     struct mutex lock;                                                                                                                                                                                 \
     /* Circular buffer for data to be processed to be available for reading*/                                                                                                                          \
     u64 offset;                                                                                                                                                                                        \
-    u16 len;
+    u16 len;                                                                                                                                                                                           \
+    /* Allows the user to request the cipher directly, without XORing with input */                                                                                                                    \
+    bool cipher_output_only;
 
 #define BUF_CAPACITY (STATE_SIZE - sizeof(struct {STATE_FIELDS}))
 
