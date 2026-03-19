@@ -3,13 +3,15 @@ screens/vault.py — Screen C (main view) + Screen D (add/edit) + Screen E (deta
 Three-pane layout: category sidebar | entry list | detail panel
 """
 
+from configparser import SectionProxy
+
 import gi
+
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, Gdk, GLib
-
 import backend
-from screens.entry_form import EntryForm
+from gi.repository import Gdk, GLib, Gtk
 
+from screens.entry_form import EntryForm
 
 CATEGORIES = ["All", "Login", "Card", "Note"]
 
@@ -123,19 +125,21 @@ class VaultScreen(Gtk.Box):
             return []
         entries = self._state["entries"]
         if self._current_category != "All":
-            entries = [e for e in entries if e.get("category") == self._current_category]
+            entries = [
+                e for e in entries if e.get("category") == self._current_category
+            ]
         if self._search_text:
             q = self._search_text.lower()
             entries = [
-                e for e in entries
-                if q in e.get("site", "").lower()
-                or q in e.get("username", "").lower()
+                e
+                for e in entries
+                if q in e.get("site", "").lower() or q in e.get("username", "").lower()
             ]
         return entries
 
     def _refresh_list(self):
         # Clear existing rows
-        while (row := self._list_box.get_row_at_index(0)):
+        while row := self._list_box.get_row_at_index(0):
             self._list_box.remove(row)
 
         for entry in self._visible_entries():
@@ -207,10 +211,10 @@ class VaultScreen(Gtk.Box):
             transient_for=self.get_root(),
             modal=True,
             message_type=Gtk.MessageType.WARNING,
+            secondary_text="This cannot be undone.",
             buttons=Gtk.ButtonsType.CANCEL,
-            text=f"Delete \"{entry['site']}\"?",
+            text=f'Delete "{entry["site"]}"?',
         )
-        dialog.format_secondary_text("This cannot be undone.")
         dialog.add_button("Delete", Gtk.ResponseType.ACCEPT)
         dialog.connect("response", self._on_delete_response, entry)
         dialog.present()
@@ -251,6 +255,7 @@ class VaultScreen(Gtk.Box):
 
 
 # ── Detail panel ──────────────────────────────────────────────────────────────
+
 
 class DetailPanel(Gtk.Box):
     def __init__(self, on_edit, on_delete):
@@ -441,6 +446,8 @@ class DetailPanel(Gtk.Box):
         clipboard = Gdk.Display.get_default().get_clipboard()
         clipboard.set("")
         self._clip_label.set_label("Clipboard cleared.")
-        GLib.timeout_add_seconds(3, lambda: self._clip_label.set_visible(False) or False)
+        GLib.timeout_add_seconds(
+            3, lambda: self._clip_label.set_visible(False) or False
+        )
         self._clipboard_timer = None
         return False
