@@ -19,11 +19,6 @@ extern const struct device* lchacha_dev;
 extern const struct class* lchacha_device_class;
 extern struct proc_dir_entry* lchacha_proc_file;
 
-// Stats
-extern atomic64_t lchacha_total_sessions;
-extern atomic64_t lchacha_active_sessions;
-extern atomic64_t lchacha_bytes_processed;
-
 #define PROC_FILENAME "chastats"
 
 #define STATE_SIZE 4096
@@ -39,6 +34,8 @@ extern atomic64_t lchacha_bytes_processed;
 
 #define BUF_CAPACITY (STATE_SIZE - sizeof(struct {STATE_FIELDS}))
 
+// stats
+
 struct chacha_stats{
     atomic_t reads;
     atomic_t writes;
@@ -46,8 +43,11 @@ struct chacha_stats{
     atomic_t errors;
 
     atomic_t ioctls;
-
     atomic_t current_buffer_bytes;
+
+    atomic_t total_sessions;
+    atomic_t active_sessions;
+    atomic_t bytes_processed;
 };
 
 extern struct chacha_stats lchacha_stats;
