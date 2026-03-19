@@ -4,8 +4,9 @@ Shown when a vault already exists. User enters their master passphrase.
 """
 
 import gi
+
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, GLib
+from gi.repository import GLib, Gtk
 
 import backend
 
@@ -45,8 +46,10 @@ class UnlockScreen(Gtk.Box):
 
         # Passphrase field
         self._passphrase_entry = Gtk.Entry()
-        self._passphrase_entry.set_visibility(False)
+        self._passphrase_entry.set_visibility(True)
         self._passphrase_entry.set_placeholder_text("Master passphrase")
+        self._passphrase_entry.connect("activate", self._on_submit)
+        card.append(self._passphrase_entry)
 
         # Error label (hidden until needed)
         self._error_label = Gtk.Label(label="Incorrect passphrase, try again.")
