@@ -30,54 +30,60 @@ class PassmanWindow(Gtk.ApplicationWindow):
         css = Gtk.CssProvider()
         css.load_from_data(b"""
             window {
-                background-color: #f6f5f4;
+                background-color: @theme_bg_color;
+                color: @theme_fg_color;
             }
             .sidebar {
-                background-color: #ffffff;
-                border-right: 1px solid #e0dedd;
+                background-color: @theme_base_color;
+                border-right: 1px solid @borders;
             }
             .entry-row {
                 padding: 10px 14px;
-                border-bottom: 1px solid #f0efee;
+                border-bottom: 1px solid @borders;
             }
             .entry-row:hover {
-                background-color: #f0efee;
+                background-color: @theme_hover_color;
             }
             .entry-row.selected {
-                background-color: #e8e7ff;
+                background-color: @accent_bg_color;
             }
             .site-label {
                 font-weight: bold;
                 font-size: 14px;
+                color: @theme_fg_color;
             }
             .username-label {
                 font-size: 12px;
-                color: #888;
+                color: @theme_fg_color;
+                opacity: 0.7;
             }
             .detail-panel {
-                background-color: #ffffff;
-                border-left: 1px solid #e0dedd;
+                background-color: @theme_base_color;
+                border-left: 1px solid @borders;
             }
             .unlock-card {
-                background-color: #ffffff;
+                background-color: @theme_base_color;
                 border-radius: 12px;
                 padding: 32px;
             }
             .heading {
                 font-size: 22px;
                 font-weight: bold;
+                color: @theme_fg_color;
             }
             .subheading {
                 font-size: 14px;
-                color: #888;
+                color: @theme_fg_color;
+                opacity: 0.7;
             }
             .error-label {
-                color: #c0392b;
+                color: @error_color;
                 font-size: 13px;
             }
             .password-hidden {
                 font-family: monospace;
                 letter-spacing: 4px;
+                color: @theme_fg_color;
             }
             .tag {
                 border-radius: 6px;
@@ -85,30 +91,32 @@ class PassmanWindow(Gtk.ApplicationWindow):
                 font-size: 11px;
             }
             .tag-login {
-                background-color: #e8e7ff;
-                color: #534ab7;
+                background-color: @accent_bg_color;
+                color: @accent_fg_color;
             }
             .tag-card {
-                background-color: #faeeda;
-                color: #854f0b;
+                background-color: @warning_color;
+                opacity: 0.15;
+                color: @theme_fg_color;
             }
             .tag-note {
-                background-color: #e1f5ee;
-                color: #0f6e56;
+                background-color: @suggested_color;
+                opacity: 0.15;
+                color: @theme_fg_color;
             }
             button.primary {
-                background-color: #534ab7;
-                color: white;
+                background-color: @accent_color;
+                color: @accent_fg_color;
                 border-radius: 8px;
                 padding: 8px 20px;
                 border: none;
                 font-weight: bold;
             }
             button.primary:hover {
-                background-color: #3c3489;
+                opacity: 0.9;
             }
             button.destructive {
-                background-color: #c0392b;
+                background-color: @error_color;
                 color: white;
                 border-radius: 8px;
                 padding: 8px 20px;
