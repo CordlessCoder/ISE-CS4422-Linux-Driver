@@ -8,9 +8,6 @@ const struct device* lchacha_dev;
 const struct class* lchacha_device_class;
 struct proc_dir_entry* lchacha_proc_file;
 
-atomic64_t lchacha_total_sessions = ATOMIC_INIT(0);
-atomic64_t lchacha_active_sessions = ATOMIC_INIT(0);
-atomic64_t lchacha_bytes_processed = ATOMIC_INIT(0);
 struct chacha_stats lchacha_stats = {
     .reads = ATOMIC_INIT(0),
     .writes = ATOMIC_INIT(0),
@@ -18,8 +15,11 @@ struct chacha_stats lchacha_stats = {
     .errors = ATOMIC_INIT(0),
     
     .ioctls = ATOMIC_INIT(0),
-
     .current_buffer_bytes = ATOMIC_INIT(0),
+
+    .total_sessions = ATOMIC_INIT(0);
+    .active_sessions = ATOMIC_INIT(0);
+    .bytes_processed = ATOMIC_INIT(0);
 };
 
 static int chacha_open(struct inode* _, struct file* f) {
