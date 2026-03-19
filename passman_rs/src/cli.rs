@@ -44,6 +44,12 @@ pub enum Commands {
         #[arg(short, long)]
         length: usize,
     },
+    /// Display live kernel usage statistics
+    Stats {
+        /// Polling interval in seconds
+        #[arg(short, long, default_value_t = 1)]
+        interval: u64,
+    },
 }
 
 #[derive(Debug, Clone, ValueEnum, PartialEq, Eq, PartialOrd, Ord, Default)]
