@@ -11,17 +11,13 @@
 #include <linux/module.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
+#include <linux/atomic.h>
 
 extern dev_t lchacha_dev_number;
 extern struct cdev lchacha_cdev;
 extern const struct device* lchacha_dev;
 extern const struct class* lchacha_device_class;
 extern struct proc_dir_entry* lchacha_proc_file;
-
-// Stats
-extern atomic64_t lchacha_total_sessions;
-extern atomic64_t lchacha_active_sessions;
-extern atomic64_t lchacha_bytes_processed;
 
 #define PROC_FILENAME "chastats"
 
@@ -37,6 +33,24 @@ extern atomic64_t lchacha_bytes_processed;
     bool cipher_output_only;
 
 #define BUF_CAPACITY (STATE_SIZE - sizeof(struct {STATE_FIELDS}))
+
+// stats
+
+struct chacha_stats{
+    atomic64_t reads;
+    atomic64_t writes;
+    atomic64_t blocks;
+    atomic64_t errors;
+
+    atomic64_t ioctls;
+    atomic64_t current_buffer_bytes;
+
+    atomic64_t total_sessions;
+    atomic64_t active_sessions;
+    atomic64_t bytes_processed;
+};
+
+extern struct chacha_stats lchacha_stats;
 
 typedef struct {
     STATE_FIELDS

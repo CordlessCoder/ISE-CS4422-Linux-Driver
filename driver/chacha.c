@@ -8,15 +8,25 @@ const struct device* lchacha_dev;
 const struct class* lchacha_device_class;
 struct proc_dir_entry* lchacha_proc_file;
 
-atomic64_t lchacha_total_sessions = ATOMIC_INIT(0);
-atomic64_t lchacha_active_sessions = ATOMIC_INIT(0);
-atomic64_t lchacha_bytes_processed = ATOMIC_INIT(0);
+struct chacha_stats lchacha_stats = {
+    .reads = ATOMIC_INIT(0),
+    .writes = ATOMIC_INIT(0),
+    .blocks = ATOMIC_INIT(0),
+    .errors = ATOMIC_INIT(0),
+
+    .ioctls = ATOMIC_INIT(0),
+    .current_buffer_bytes = ATOMIC_INIT(0),
+
+    .total_sessions = ATOMIC_INIT(0),
+    .active_sessions = ATOMIC_INIT(0),
+    .bytes_processed = ATOMIC_INIT(0),
+};
 
 static int chacha_open(struct inode* _, struct file* f) {
     dev_dbg(lchacha_dev, "Open is called\n");
     f->private_data = kcalloc(STATE_SIZE, 1, GFP_KERNEL_ACCOUNT);
     if (!f->private_data) {
-        pr_err("chacha - Out of memory\n");
+        dev_err(lchacha_dev, "Out of memory\n");
         return -ENOMEM;
     }
     char zero_key[32] = {};
@@ -25,8 +35,8 @@ static int chacha_open(struct inode* _, struct file* f) {
     ChaCha20_set_key(&state->ctx, zero_key);
     mutex_init(&state->lock);
 
-    atomic64_inc(&lchacha_total_sessions);
-    atomic64_inc(&lchacha_active_sessions);
+    atomic64_inc(&lchacha_stats.total_sessions);
+    atomic64_inc(&lchacha_stats.active_sessions);
 
     return 0;
 }
@@ -35,6 +45,7 @@ static int chacha_release(struct inode* _, struct file* f) {
     dev_dbg(lchacha_dev, "Release is called\n");
     {
         chacha_state* state = f->private_data;
+        atomic64_sub(state->len, &lchacha_stats.current_buffer_bytes);
         mutex_destroy(&state->lock);
     }
 
@@ -42,7 +53,7 @@ static int chacha_release(struct inode* _, struct file* f) {
     memset(f->private_data, 0, STATE_SIZE);
 
     kfree(f->private_data);
-    atomic64_dec(&lchacha_active_sessions);
+    atomic64_dec(&lchacha_stats.active_sessions);
     return 0;
 }
 

@@ -16,6 +16,8 @@ ssize_t lchacha_read(struct file* f, char __user* user_buf, size_t len, loff_t* 
         return -ERESTARTSYS;
     }
 
+    atomic64_inc(&lchacha_stats.reads);
+
     if (state->cipher_output_only) {
         while (len != 0) {
             size_t chunk = min(CHACHA20_BLOCKLENGTH, len);
@@ -24,6 +26,7 @@ ssize_t lchacha_read(struct file* f, char __user* user_buf, size_t len, loff_t* 
             chacha_process(state, buf, chunk);
             if ((status = copy_to_user(user_buf, buf, chunk))) {
                 dev_err(lchacha_dev, "Failed to copy output to user\n");
+                atomic64_inc(&lchacha_stats.errors);
                 output = status;
                 goto unlock;
             };
@@ -37,6 +40,7 @@ ssize_t lchacha_read(struct file* f, char __user* user_buf, size_t len, loff_t* 
 
     // Wait for buffer to become non-empty
     if ((status = wait_var_event_any_lock(&state->len, state->len != 0, &state->lock, mutex, TASK_INTERRUPTIBLE))) {
+        atomic64_inc(&lchacha_stats.errors);
         return status;
     };
 
@@ -52,6 +56,8 @@ ssize_t lchacha_read(struct file* f, char __user* user_buf, size_t len, loff_t* 
         dev_dbg(lchacha_dev, "Reading %zu bytes starting at %zu", can_read, start_in_buf);
         chacha_process(state, &state->buffer[start_in_buf], can_read);
         state->len -= can_read;
+        atomic64_sub(can_read, &lchacha_stats.current_buffer_bytes);
+
         if ((status = copy_to_user(user_buf, &state->buffer[start_in_buf], can_read))) {
             dev_err(lchacha_dev, "Failed to copy output to user\n");
             output = status;
@@ -78,11 +84,14 @@ ssize_t lchacha_write(struct file* f, const char __user* user_buf, size_t len, l
     if (mutex_lock_interruptible(&state->lock)) {
         return -ERESTARTSYS;
     }
+
+    atomic64_inc(&lchacha_stats.writes);
     dev_dbg(lchacha_dev, "write(%zu) called", len);
 
     // Wait for buffer to become non-full
     int status = 0;
     if ((status = wait_var_event_any_lock(&state->len, state->len != BUF_CAPACITY, &state->lock, mutex, TASK_INTERRUPTIBLE))) {
+        atomic64_inc(&lchacha_stats.errors);
         return status;
     };
     size_t output = 0;
@@ -103,6 +112,7 @@ ssize_t lchacha_write(struct file* f, const char __user* user_buf, size_t len, l
         dev_dbg(lchacha_dev, "Writing %zu bytes starting at %zu", to_copy, writable_start);
         if (copy_from_user(&state->buffer[writable_start], user_buf, to_copy)) {
             dev_err(lchacha_dev, "Failed to copy input to write() from user\n");
+            atomic64_inc(&lchacha_stats.errors);
             output = -EFAULT;
             break;
         };
@@ -111,6 +121,7 @@ ssize_t lchacha_write(struct file* f, const char __user* user_buf, size_t len, l
         len -= to_copy;
         output += to_copy;
         state->len += to_copy;
+        atomic64_add(to_copy, &lchacha_stats.current_buffer_bytes);
     }
     wake_up_var_locked(&state->len, &state->lock);
     mutex_unlock(&state->lock);
@@ -120,13 +131,14 @@ ssize_t lchacha_write(struct file* f, const char __user* user_buf, size_t len, l
 // NOTE: This function will advance the offset by the amount it reads, do not do that outside of it!
 static void chacha_process(chacha_state* state, char* data, size_t len) {
     dev_dbg(lchacha_dev, "Processing ChaCha20, len = %zu, offset = %llu", len, state->offset);
-    atomic64_add(len, &lchacha_bytes_processed);
+    atomic64_add(len, &lchacha_stats.bytes_processed);
 
     char block[CHACHA20_BLOCKLENGTH] = {};
     while (len != 0) {
         if ((state->offset % CHACHA20_BLOCKLENGTH) == 0 && len >= CHACHA20_BLOCKLENGTH) {
             // We can use a xorblock operation with no padding
             ChaCha20_xorblock_noinc(&state->ctx, data);
+            atomic64_inc(&lchacha_stats.blocks);
             ChaCha20_increment_counter(&state->ctx);
 
             data += CHACHA20_BLOCKLENGTH;
@@ -141,6 +153,7 @@ static void chacha_process(chacha_state* state, char* data, size_t len) {
 
         memcpy(&block[start], data, chunk_len);
         ChaCha20_xorblock_noinc(&state->ctx, block);
+        atomic64_inc(&lchacha_stats.blocks);
         memcpy(data, &block[start], chunk_len);
 
         data += chunk_len;
@@ -185,11 +198,13 @@ loff_t lchacha_lseek(struct file* f, loff_t offset, int whence) {
         goto unlock;
     } break;
     default: {
+        atomic64_inc(&lchacha_stats.errors);
         status = -EINVAL;
         goto unlock;
     } break;
     }
 
+    atomic64_sub(state->len, &lchacha_stats.current_buffer_bytes);
     state->len = 0;
 
     dev_dbg(lchacha_dev, "New offset: %lld\n", state->offset);
