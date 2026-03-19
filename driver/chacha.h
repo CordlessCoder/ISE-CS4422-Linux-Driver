@@ -47,8 +47,8 @@ struct chacha_stats{
     atomic_t errors;
 
     atomic_t ioctls;
-
     atomic_t current_buffer_bytes;
+    atomic_t peak_buffer_bytes;
 };
 
 extern struct chacha_stats lchacha_stats;
