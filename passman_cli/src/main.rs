@@ -5,6 +5,8 @@ use passman_cli::{
 };
 use std::io::{self, BufRead, BufReader};
 use zeroize::Zeroizing;
+mod stats;
+use std::time::Duration;
 
 fn main() {
     let cli = Cli::parse();
@@ -48,8 +50,8 @@ fn main() {
             io::copy(&mut stdin, &mut writer).unwrap();
             writer.update_header().unwrap();
         }
-        Commands::GenPassword { .. } => {
-            todo!("Password generation is not implemented yet")
+        Commands::Stats { interval } => {
+            stats::run_dashboard(Duration::try_from_secs_f64(interval).unwrap()).unwrap();
         }
     }
 }

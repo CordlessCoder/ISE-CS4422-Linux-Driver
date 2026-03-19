@@ -1,0 +1,33 @@
+// Project-local debug tasks
+//
+// For more documentation on how to configure debug tasks,
+// see: https://zed.dev/docs/debugger
+[
+  {
+    "adapter": "CodeLLDB",
+    "label": "cargo run -p passman_rs",
+    "build": {
+      "label": "cargo run -p passman_rs",
+      "command": "cargo",
+      "args": ["build", "--package", "passman_rs"],
+      "env": {
+        "RUSTC_TOOLCHAIN": "/home/me/.rustup/toolchains/stable-x86_64-unknown-linux-gnu",
+      },
+      "cwd": "/home/me/ISE/C/ISE-CS4422-Linux-Driver/passman_rs",
+      "use_new_terminal": false,
+      "allow_concurrent_runs": false,
+      "reveal": "always",
+      "reveal_target": "dock",
+      "hide": "never",
+      "tags": [],
+      "shell": "system",
+      "show_summary": false,
+      "show_command": false,
+    },
+    "sourceLanguages": ["rust"],
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/passman_rs/target/debug/passman_rs",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "args": ["stats"],
+  },
+]

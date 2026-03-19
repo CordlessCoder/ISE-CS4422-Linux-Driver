@@ -8,6 +8,9 @@ argon2 = "0.5.3"
 blake2 = "0.10.6"
 bstr = "1.12.1"
 clap = { version = "4.6.0", default-features = false, features = ["std", "usage", "derive", "color", "suggestions", "help"] }
+crossterm = "0.29.0"
 nix = { version = "0.31.2", features = ["ioctl"] }
 rand = "0.10.0"
+ratatui = "0.30.0"
+sizef = "0.2.1"
 zeroize = { version = "1.8.2", features = ["std"] }

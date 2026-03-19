@@ -8,7 +8,6 @@ CLI contract agreed with Dillion:
   PASSMAN_EXEC create-vault --vault <path>        (passphrase via stdin)
   PASSMAN_EXEC unlock        --vault <path>        (passphrase via stdin) -> JSON
   PASSMAN_EXEC save          --vault <path>        (passphrase + JSON via stdin)
-  PASSMAN_EXEC gen-password  --length <n>          -> plain string
   All return exit code 0 on success, 1 on failure.
 """
 
@@ -136,18 +135,9 @@ def save(passphrase: str, entries: list) -> bool:
 
 def generate_password(length: int = 20) -> str:
     """Generate a strong random password."""
-    if USE_STUBS:
-        import secrets
-        import string
+    import secrets
 
-        alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
-        return "".join(secrets.choice(alphabet) for _ in range(length))
-    result = subprocess.run(
-        [PASSMAN_EXEC, "gen-password", "--length", str(length)],
-        text=True,
-        capture_output=True,
-    )
-    return result.stdout.strip()
+    return secrets.token_urlsafe(length)
 
 
 def new_entry_id() -> str:
