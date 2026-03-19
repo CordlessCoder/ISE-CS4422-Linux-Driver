@@ -1,183 +1,240 @@
-use std::{fs, thread, time::Duration};
+use crate::stats::fetch_stats::ChaChaInstant;
+use crossterm::event;
 use ratatui::{
-    backend::CrosstermBackend,
-    Terminal,
-    widgets::{Block, Borders, Chart, Dataset, Axis},
-    layout::{Layout, Constraint, Direction},
+    layout::{Constraint, Layout},
+    style::{Color, Style},
+    widgets::{Axis, Block, Borders, Chart, Dataset, Paragraph},
 };
-use crossterm::{
-    terminal::{enable_raw_mode, disable_raw_mode},
-    execute,
+use sizef::IntoSize;
+use std::{
+    io,
+    time::{Duration, Instant},
 };
-use std::{io, time::{Duration, Instant}};
 
-#[derive(Debug, Clone, Copy)]
-pub struct Stats {
-    pub reads: u64,
-    pub writes: u64,
-    pub blocks: u64,
-    pub errors: u64,
-    pub ioctls: u64,
-    pub current_buffer_bytes: u64,
-    pub total_sessions: u64,
-    pub active_sessions: u64,
-    pub bytes_processed: u64,
-}
-
-pub fn read_stats() -> Stats {
-    let content = std::fs::read_to_string("/proc/chacha_stats")
-        .expect("Failed to read /proc/chacha_stats");
-
-    let mut stats = Stats {
-        reads: 0,
-        writes: 0,
-        blocks: 0,
-        errors: 0,
-        ioctls: 0,
-        current_buffer_bytes: 0,
-        total_sessions: 0,
-        active_sessions: 0,
-        bytes_processed: 0,
-    };
-
-    for line in content.lines() {
-        if let Some(v) = line.strip_prefix("Reads=") {
-            stats.reads = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("Writes=") {
-            stats.writes = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("Blocks=") {
-            stats.blocks = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("Errors=") {
-            stats.errors = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("Ioctls=") {
-            stats.ioctls = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("BufferBytes=") {
-            stats.current_buffer_bytes = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("Sessions(Total)=") {
-            stats.total_sessions = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("Sessions(Active)=") {
-            stats.active_sessions = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("BytesProcessed=") {
-            stats.bytes_processed = v.trim().parse().unwrap();
-        }
-    }
-
-    stats
-}
+mod fetch_stats;
 
 pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout)?;
-
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
     // Keep history for last N points
     const MAX_POINTS: usize = 50;
-    let mut history_reads: VecDeque<(f64,f64)> = VecDeque::new();
-    let mut history_writes: VecDeque<(f64,f64)> = VecDeque::new();
-    let mut history_ioctls: VecDeque<(f64,f64)> = VecDeque::new();
-    let mut history_bytes: VecDeque<(f64,f64)> = VecDeque::new();
-    let mut x = 0.0;
+    let mut history_reads: Vec<(f64, f64)> = Vec::new();
+    let mut history_writes: Vec<(f64, f64)> = Vec::new();
+    let mut history_ioctls: Vec<(f64, f64)> = Vec::new();
+    let mut history_bytes: Vec<(f64, f64)> = Vec::new();
+    let mut history_blocks: Vec<(f64, f64)> = Vec::new();
+    let mut history_sessions: Vec<(f64, f64)> = Vec::new();
+    let mut history_errors: Vec<(f64, f64)> = Vec::new();
+    let mut time = 0.0;
 
-    let mut prev = read_stats();
+    ratatui::run(|terminal| {
+        let mut next_frame = Instant::now().checked_add(interval).unwrap();
+        'stats: loop {
+            let current = fetch_stats::ChaChaSample::fetch().unwrap();
+            let diff = current.diff_with_last();
 
-    loop {
-        let current = read_stats();
-
-        // Compute rates
-        let reads_sec = (current.reads - prev.reads) as f64;
-        let writes_sec = (current.writes - prev.writes) as f64;
-        let ioctls_sec = (current.ioctls - prev.ioctls) as f64;
-        let bytes_sec = (current.bytes_processed - prev.bytes_processed) as f64;
-        let errors_sec = (current.errors - prev.errors) as f64;
-
-        // Push to history
-        for (deque, value) in [
-            (&mut history_reads, reads_sec),
-            (&mut history_writes, writes_sec),
-            (&mut history_ioctls, ioctls_sec),
-            (&mut history_bytes, bytes_sec),
-        ] {
-            deque.push_back((x, value));
-            if deque.len() > MAX_POINTS {
-                deque.pop_front();
+            // Push to history
+            let compute_per_second = |val| val as f64 / (diff.over.as_secs_f64());
+            for (queue, value) in [
+                (&mut history_reads, diff.reads),
+                (&mut history_writes, diff.writes),
+                (&mut history_ioctls, diff.ioctls),
+                (&mut history_bytes, diff.bytes),
+                (&mut history_blocks, diff.blocks * 64),
+                (&mut history_errors, diff.errors),
+            ] {
+                if queue.len() >= MAX_POINTS {
+                    queue.remove(0);
+                }
+                queue.push((time, compute_per_second(value)));
             }
+            if history_sessions.len() >= MAX_POINTS {
+                history_sessions.remove(0);
+            }
+            history_sessions.push((time, current.data.active_sessions as f64));
+
+            // Layout: upper = chart, lower = raw stats
+            terminal.draw(|f| {
+                let area = f.area();
+                let row_count = 2;
+                let col_count = 2;
+                let col_constraints = vec![Constraint::Ratio(1, row_count); row_count as usize];
+                let row_constraints = vec![Constraint::Ratio(1, col_count); col_count as usize];
+                let horizontal = Layout::horizontal(col_constraints);
+                let vertical = Layout::vertical(row_constraints);
+                let cells: Vec<_> = area
+                    .layout_vec(&vertical)
+                    .into_iter()
+                    .flat_map(|row| row.layout_vec(&horizontal))
+                    .collect();
+
+                // Graph of rates
+                let max_throughput = history_bytes
+                    .iter()
+                    .map(|&(_, b)| b)
+                    .max_by(|a, b| a.total_cmp(b))
+                    .unwrap_or_default();
+                let max_io = history_reads
+                    .iter()
+                    .chain(&history_writes)
+                    .chain(&history_ioctls)
+                    .map(|&(_, b)| b)
+                    .max_by(|a, b| a.total_cmp(b))
+                    .unwrap_or_default();
+                let max_events = history_sessions
+                    .iter()
+                    .chain(&history_errors)
+                    .map(|&(_, b)| b)
+                    .max_by(|a, b| a.total_cmp(b))
+                    .unwrap_or_default();
+                let chart_throughput = Chart::new(vec![
+                    Dataset::default()
+                        .name("Bytes/sec")
+                        .marker(ratatui::symbols::Marker::Braille)
+                        .style(Style::default().fg(Color::Blue))
+                        .data(&history_bytes),
+                    Dataset::default()
+                        .name("Blocks/sec")
+                        .marker(ratatui::symbols::Marker::Braille)
+                        .style(Style::default().fg(Color::Cyan))
+                        .data(&history_blocks),
+                ])
+                .block(Block::default().title("Throughput").borders(Borders::ALL))
+                .legend_position(Some(ratatui::widgets::LegendPosition::BottomLeft))
+                .hidden_legend_constraints((Constraint::Min(1), Constraint::Min(1)))
+                .x_axis(
+                    Axis::default()
+                        .title("Time")
+                        .bounds([time - MAX_POINTS as f64 * interval.as_secs_f64(), time]),
+                )
+                .y_axis(
+                    Axis::default()
+                        .bounds([0.0, max_throughput.max(1.0)])
+                        .labels([
+                            "0.0B".to_string(),
+                            format!("{:.0}", max_throughput.into_decimalsize()),
+                        ]),
+                );
+                f.render_widget(chart_throughput, cells[1]);
+
+                let chart_ops = Chart::new(vec![
+                    Dataset::default()
+                        .name("Reads/sec")
+                        .marker(ratatui::symbols::Marker::Braille)
+                        .style(Style::default().fg(Color::Red))
+                        .data(&history_reads),
+                    Dataset::default()
+                        .name("Writes/sec")
+                        .marker(ratatui::symbols::Marker::Braille)
+                        .style(Style::default().fg(Color::Blue))
+                        .data(&history_writes),
+                    Dataset::default()
+                        .name("IOCTLs/sec")
+                        .marker(ratatui::symbols::Marker::Braille)
+                        .style(Style::default().fg(Color::Yellow))
+                        .data(&history_ioctls),
+                ])
+                .block(Block::default().title("Operations").borders(Borders::ALL))
+                .legend_position(Some(ratatui::widgets::LegendPosition::BottomLeft))
+                .hidden_legend_constraints((Constraint::Min(1), Constraint::Min(1)))
+                .x_axis(
+                    Axis::default()
+                        .title("Time")
+                        .bounds([time - MAX_POINTS as f64 * interval.as_secs_f64(), time]),
+                )
+                .y_axis(
+                    Axis::default()
+                        .title("Rate")
+                        .bounds([0.0, max_io.max(1.0)])
+                        .labels(["0.0".to_string(), format!("{:.0}", max_io)]),
+                );
+                f.render_widget(chart_ops, cells[2]);
+
+                let chart_sessions = Chart::new(vec![
+                    Dataset::default()
+                        .name("Errors/sec")
+                        .marker(ratatui::symbols::Marker::Braille)
+                        .style(Style::default().fg(Color::Red))
+                        .data(&history_errors),
+                    Dataset::default()
+                        .name("Active sessions")
+                        .marker(ratatui::symbols::Marker::Braille)
+                        .style(Style::default().fg(Color::Blue))
+                        .data(&history_sessions),
+                ])
+                .block(Block::default().title("Other Events").borders(Borders::ALL))
+                .legend_position(Some(ratatui::widgets::LegendPosition::BottomLeft))
+                .hidden_legend_constraints((Constraint::Min(1), Constraint::Min(1)))
+                .x_axis(
+                    Axis::default()
+                        .title("Time")
+                        .bounds([time - MAX_POINTS as f64 * interval.as_secs_f64(), time]),
+                )
+                .y_axis(
+                    Axis::default()
+                        .title("Rate")
+                        .bounds([0.0, max_events.max(1.0)])
+                        .labels(["0.0".to_string(), format!("{:.0}", max_events)]),
+                );
+                f.render_widget(chart_sessions, cells[3]);
+
+                // Raw stats
+                let text = {
+                    let ChaChaInstant {
+                        total_sessions,
+                        active_sessions,
+                        bytes,
+                        reads,
+                        writes,
+                        ioctls,
+                        blocks,
+                        buffered_bytes,
+                        errors,
+                    } = current.data;
+                    format!(
+                        "Reads: {reads}\n\
+                 Writes: {writes}\n\
+                 IOCTLs: {ioctls}\n\
+                 Blocks: {blocks}\n\
+                 Bytes Processed: {bytes}\n\
+                 Errors: {errors}\n\
+                 Current Buffer: {buffered_bytes}\n\
+                 Active Sessions: {active_sessions}\n\
+                 Total Sessions: {total_sessions}",
+                    )
+                };
+
+                let paragraph = Paragraph::new(text)
+                    .block(Block::default().borders(Borders::ALL).title("Raw Stats"));
+
+                f.render_widget(paragraph, cells[0]);
+            })?;
+            while event::poll(next_frame.duration_since(Instant::now()))? {
+                let event = event::read()?;
+                let event::Event::Key(key) = event else {
+                    continue;
+                };
+                match key {
+                    event::KeyEvent {
+                        code: event::KeyCode::Char('q'),
+                        kind: event::KeyEventKind::Press,
+                        ..
+                    } => {
+                        break 'stats;
+                    }
+                    event::KeyEvent {
+                        code: event::KeyCode::Char('c'),
+                        kind: event::KeyEventKind::Press,
+                        modifiers,
+                        ..
+                    } if modifiers.contains(event::KeyModifiers::CONTROL) => {
+                        break 'stats;
+                    }
+                    _ => (),
+                }
+            }
+            time += interval.as_secs_f64();
+            next_frame = next_frame.checked_add(interval).unwrap();
         }
 
-        // Layout: upper = chart, lower = raw stats
-        terminal.draw(|f| {
-            let size = f.size();
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(1)
-                .constraints([
-                    Constraint::Percentage(60), // chart
-                    Constraint::Percentage(40), // raw stats
-                ].as_ref())
-                .split(size);
-
-            // Graph of rates
-            let chart = Chart::new(vec![
-                Dataset::default()
-                    .name("Reads/sec")
-                    .marker(ratatui::symbols::Marker::Dot)
-                    .style(Style::default().fg(Color::Green))
-                    .data(&history_reads.iter().copied().collect::<Vec<_>>()),
-                Dataset::default()
-                    .name("Writes/sec")
-                    .marker(ratatui::symbols::Marker::Dot)
-                    .style(Style::default().fg(Color::Blue))
-                    .data(&history_writes.iter().copied().collect::<Vec<_>>()),
-                Dataset::default()
-                    .name("IOCTLs/sec")
-                    .marker(ratatui::symbols::Marker::Dot)
-                    .style(Style::default().fg(Color::Yellow))
-                    .data(&history_ioctls.iter().copied().collect::<Vec<_>>()),
-                Dataset::default()
-                    .name("Bytes/sec")
-                    .marker(ratatui::symbols::Marker::Dot)
-                    .style(Style::default().fg(Color::Magenta))
-                    .data(&history_bytes.iter().copied().collect::<Vec<_>>()),
-            ])
-            .block(Block::default().title("I/O Rates").borders(Borders::ALL))
-            .x_axis(Axis::default().title("Time").bounds([x - MAX_POINTS as f64, x]))
-            .y_axis(Axis::default().title("Rate").bounds([0.0, reads_sec.max(writes_sec).max(ioctls_sec).max(bytes_sec) * 1.2]));
-
-            f.render_widget(chart, chunks[0]);
-
-            // Raw stats
-            let text = format!(
-                "Raw Stats:\n\
-                 Reads: {}\n\
-                 Writes: {}\n\
-                 IOCTLs: {}\n\
-                 Blocks: {}\n\
-                 Bytes Processed: {}\n\
-                 Errors: {}\n\
-                 Current Buffer: {}\n\
-                 Active Sessions: {}\n\
-                 Total Sessions: {}",
-                current.reads,
-                current.writes,
-                current.ioctls,
-                current.blocks,
-                current.bytes_processed,
-                current.errors,
-                current.current_buffer_bytes,
-                current.active_sessions,
-                current.total_sessions
-            );
-
-            let paragraph = Paragraph::new(text)
-                .block(Block::default().borders(Borders::ALL).title("Raw Stats"));
-
-            f.render_widget(paragraph, chunks[1]);
-        })?;
-
-        prev = current;
-        x += 1.0;
-        std::thread::sleep(interval);
-    }
+        Ok(())
+    })
 }

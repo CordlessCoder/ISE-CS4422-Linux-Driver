@@ -49,11 +49,8 @@ fn main() {
             io::copy(&mut stdin, &mut writer).unwrap();
             writer.update_header().unwrap();
         }
-        Commands::GenPassword { .. } => {
-            todo!("Password generation is not implemented yet")
-        }
         Commands::Stats { interval } => {
-            stats::run_dashboard(Duration::from_secs(interval));
+            stats::run_dashboard(Duration::try_from_secs_f64(interval).unwrap()).unwrap();
         }
     }
 }

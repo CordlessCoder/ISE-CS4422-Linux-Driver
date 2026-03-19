@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 chacha20 = { version = "0.10.0", features = ["legacy"] }
+clap = { version = "4.6.0", default-features = false, features = ["std", "usage", "derive", "color", "suggestions", "help"] }
 nix = { version = "0.31.2", features = ["ioctl"] }
 rand = "0.10.0"
 signal-hook = "0.4.3"
