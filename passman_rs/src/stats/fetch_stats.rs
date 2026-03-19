@@ -97,7 +97,7 @@ impl ChaChaSample {
                 b"Writes" => info.data.writes = value,
                 b"Ioctls" => info.data.ioctls = value,
                 b"Blocks" => info.data.blocks = value,
-                b"Buffer bytes" => info.data.buffered_bytes = value,
+                b"Buffer Bytes" => info.data.buffered_bytes = value,
                 b"Errors" => info.data.errors = value,
                 b"Sessions(Active)" => info.data.active_sessions = value,
                 b"Sessions(Total)" => info.data.total_sessions = value,
