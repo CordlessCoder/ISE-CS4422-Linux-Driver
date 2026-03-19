@@ -144,6 +144,7 @@ static void chacha_process(chacha_state* state, char* data, size_t len) {
         if ((state->offset % CHACHA20_BLOCKLENGTH) == 0 && len >= CHACHA20_BLOCKLENGTH) {
             // We can use a xorblock operation with no padding
             ChaCha20_xorblock_noinc(&state->ctx, data);
+            atomic64_inc(&lchacha_stats.blocks);
             ChaCha20_increment_counter(&state->ctx);
 
             data += CHACHA20_BLOCKLENGTH;
@@ -158,6 +159,7 @@ static void chacha_process(chacha_state* state, char* data, size_t len) {
 
         memcpy(&block[start], data, chunk_len);
         ChaCha20_xorblock_noinc(&state->ctx, block);
+        atomic64_inc(&lchacha_stats.blocks);
         memcpy(data, &block[start], chunk_len);
 
         data += chunk_len;
