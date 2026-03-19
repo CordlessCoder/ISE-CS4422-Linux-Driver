@@ -53,7 +53,7 @@ fn main() {
             todo!("Password generation is not implemented yet")
         }
         Commands::Stats { interval } => {
-            stats::poll_stats(Duration::from_secs(interval));
+            stats::run_dashboard(Duration::from_secs(interval));
         }
     }
 }
