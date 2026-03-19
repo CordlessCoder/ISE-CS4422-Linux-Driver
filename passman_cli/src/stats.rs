@@ -144,7 +144,7 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
                     Axis::default()
                         .title("Rate")
                         .bounds([0.0, max_io.max(1.0)])
-                        .labels(["0.0".to_string(), format!("{:.0}", max_io)]),
+                        .labels(["0".to_string(), format!("{:.0}", max_io)]),
                 );
                 f.render_widget(chart_ops, cells[2]);
 
@@ -172,7 +172,7 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
                     Axis::default()
                         .title("Rate")
                         .bounds([0.0, max_events.max(1.0)])
-                        .labels(["0.0".to_string(), format!("{:.0}", max_events)]),
+                        .labels(["0".to_string(), format!("{:.0}", max_events)]),
                 );
                 f.render_widget(chart_sessions, cells[3]);
 
