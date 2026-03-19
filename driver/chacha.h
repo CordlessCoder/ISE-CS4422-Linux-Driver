@@ -42,13 +42,12 @@ extern atomic64_t lchacha_bytes_processed;
 struct chacha_stats{
     atomic_t reads;
     atomic_t writes;
-    atomic_t encrypts;
-    atomic_t decrypts;
+    atomic_t blocks;
     atomic_t errors;
 
     atomic_t ioctls;
+
     atomic_t current_buffer_bytes;
-    atomic_t peak_buffer_bytes;
 };
 
 extern struct chacha_stats lchacha_stats;
