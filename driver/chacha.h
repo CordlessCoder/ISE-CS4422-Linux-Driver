@@ -11,6 +11,7 @@
 #include <linux/module.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
+#include <linux/atomic.h>
 
 extern dev_t lchacha_dev_number;
 extern struct cdev lchacha_cdev;
@@ -37,6 +38,17 @@ extern atomic64_t lchacha_bytes_processed;
     u64 requested_zeroed_inputs;
 
 #define BUF_CAPACITY (STATE_SIZE - sizeof(struct {STATE_FIELDS}))
+
+struct chacha_stats{
+    atomic_t reads;
+    atomic_t writes;
+    atomic_t encrypts;
+    atomic_t decrypts;
+    atomic_t errors;
+    atomic_t bytes_processed;
+};
+
+extern struct chacha_stats stats;
 
 typedef struct {
     STATE_FIELDS
