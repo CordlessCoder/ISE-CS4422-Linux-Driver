@@ -1,5 +1,5 @@
 use clap::Parser;
-use passman_rs::{
+use passman_cli::{
     ClosedVault, OpenVault,
     cli::{Cli, Commands},
 };

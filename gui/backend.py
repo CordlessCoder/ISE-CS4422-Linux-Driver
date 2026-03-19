@@ -66,7 +66,7 @@ _MOCK_ENTRIES = [
 
 # ── Public API — these are what the GUI calls ──────────────────────────────────
 
-USE_STUBS = True  # flip to False when real CLI is ready
+USE_STUBS = False  # flip to False when real CLI is ready
 
 
 def vault_exists() -> bool:
