@@ -30,7 +30,7 @@ extern struct proc_dir_entry* lchacha_proc_file;
     u64 offset;                                                                                                                                                                                        \
     u16 len;                                                                                                                                                                                           \
     /* Allows the user to request the cipher directly, without XORing with input */                                                                                                                    \
-    u64 requested_zeroed_inputs;
+    bool cipher_output_only;
 
 #define BUF_CAPACITY (STATE_SIZE - sizeof(struct {STATE_FIELDS}))
 
