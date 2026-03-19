@@ -16,7 +16,7 @@ import subprocess
 import uuid
 from pathlib import Path
 
-PASSMAN_EXEC = "passman_rs"
+PASSMAN_EXEC = "passman_cli"
 
 VAULT_PATH = Path.home() / ".config" / "passman" / "passman.vlt"
 
