@@ -30,23 +30,23 @@ pub fn read_stats() -> Stats {
     };
 
     for line in content.lines() {
-        if let Some(v) = line.strip_prefix("reads:") {
+        if let Some(v) = line.strip_prefix("Reads=") {
             stats.reads = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("writes:") {
+        } else if let Some(v) = line.strip_prefix("Writes=") {
             stats.writes = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("blocks:") {
+        } else if let Some(v) = line.strip_prefix("Blocks=") {
             stats.blocks = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("errors:") {
+        } else if let Some(v) = line.strip_prefix("Errors=") {
             stats.errors = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("ioctls:") {
+        } else if let Some(v) = line.strip_prefix("Ioctls=") {
             stats.ioctls = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("current_buffer_bytes:") {
+        } else if let Some(v) = line.strip_prefix("BufferBytes=") {
             stats.current_buffer_bytes = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("total_sessions:") {
+        } else if let Some(v) = line.strip_prefix("Sessions(Total)=") {
             stats.total_sessions = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("active_sessions:") {
+        } else if let Some(v) = line.strip_prefix("Sessions(Active)=") {
             stats.active_sessions = v.trim().parse().unwrap();
-        } else if let Some(v) = line.strip_prefix("bytes_processed:") {
+        } else if let Some(v) = line.strip_prefix("BytesProcessed=") {
             stats.bytes_processed = v.trim().parse().unwrap();
         }
     }
