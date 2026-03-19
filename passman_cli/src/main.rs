@@ -1,5 +1,5 @@
 use clap::Parser;
-use passman_rs::{
+use passman_cli::{
     ClosedVault, OpenVault,
     cli::{Cli, Commands},
 };
@@ -14,6 +14,7 @@ fn main() {
         let mut stdin = BufReader::new(io::stdin().lock());
         let mut password = Zeroizing::new(Vec::new());
         stdin.read_until(b'\n', &mut password).unwrap();
+        password.pop_if(|&mut last| last == b'\n');
         (password, stdin)
     };
     match cli.command {
