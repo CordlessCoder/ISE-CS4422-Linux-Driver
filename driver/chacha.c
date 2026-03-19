@@ -14,12 +14,12 @@ atomic64_t lchacha_bytes_processed = ATOMIC_INIT(0);
 struct chacha_stats lchacha_stats = {
     .reads = ATOMIC_INIT(0),
     .writes = ATOMIC_INIT(0),
-    .encrypts = ATOMIC_INIT(0),
-    .decrypts = ATOMIC_INIT(0),
+    .blocks = ATOMIC_INIT(0),
+    .errors = ATOMIC_INIT(0),
     
     .ioctls = ATOMIC_INIT(0),
+
     .current_buffer_bytes = ATOMIC_INIT(0),
-    .peak_buffer_bytes = ATOMIC_INIT(0),
 };
 
 static int chacha_open(struct inode* _, struct file* f) {
