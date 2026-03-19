@@ -2,7 +2,7 @@
 #include "chacha.h"
 
 long int chacha_ioctl(struct file* f, unsigned int cmd, unsigned long args) {
-    atomic_inc(&lchacha_stats.ioctls);
+    atomic64_inc(&lchacha_stats.ioctls);
     
     chacha_state* state = f->private_data;
     dev_dbg(lchacha_dev, "ioctl called with cmd: 0x%x and args: %p\n", cmd, (void*)args);
@@ -53,7 +53,7 @@ long int chacha_ioctl(struct file* f, unsigned int cmd, unsigned long args) {
     } break;
 
     default: {
-        atomic_inc(&lchacha_stats.errors);
+        atomic64_inc(&lchacha_stats.errors);
         status = -EOPNOTSUPP;
     } break;
     }

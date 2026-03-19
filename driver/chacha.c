@@ -13,20 +13,20 @@ struct chacha_stats lchacha_stats = {
     .writes = ATOMIC_INIT(0),
     .blocks = ATOMIC_INIT(0),
     .errors = ATOMIC_INIT(0),
-    
+
     .ioctls = ATOMIC_INIT(0),
     .current_buffer_bytes = ATOMIC_INIT(0),
 
-    .total_sessions = ATOMIC_INIT(0);
-    .active_sessions = ATOMIC_INIT(0);
-    .bytes_processed = ATOMIC_INIT(0);
+    .total_sessions = ATOMIC_INIT(0),
+    .active_sessions = ATOMIC_INIT(0),
+    .bytes_processed = ATOMIC_INIT(0),
 };
 
 static int chacha_open(struct inode* _, struct file* f) {
     dev_dbg(lchacha_dev, "Open is called\n");
     f->private_data = kcalloc(STATE_SIZE, 1, GFP_KERNEL_ACCOUNT);
     if (!f->private_data) {
-        pr_err("chacha - Out of memory\n");
+        dev_err(lchacha_dev, "Out of memory\n");
         return -ENOMEM;
     }
     char zero_key[32] = {};

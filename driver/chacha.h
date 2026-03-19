@@ -37,17 +37,17 @@ extern struct proc_dir_entry* lchacha_proc_file;
 // stats
 
 struct chacha_stats{
-    atomic_t reads;
-    atomic_t writes;
-    atomic_t blocks;
-    atomic_t errors;
+    atomic64_t reads;
+    atomic64_t writes;
+    atomic64_t blocks;
+    atomic64_t errors;
 
-    atomic_t ioctls;
-    atomic_t current_buffer_bytes;
+    atomic64_t ioctls;
+    atomic64_t current_buffer_bytes;
 
-    atomic_t total_sessions;
-    atomic_t active_sessions;
-    atomic_t bytes_processed;
+    atomic64_t total_sessions;
+    atomic64_t active_sessions;
+    atomic64_t bytes_processed;
 };
 
 extern struct chacha_stats lchacha_stats;
