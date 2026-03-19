@@ -43,10 +43,12 @@ fn main() {
             let vault = ClosedVault::open(&path).unwrap();
             let mut vault = vault.unlock(&password).unwrap();
             if !skip_auth {
-                eprintln!(
-                    "Authentication failed! Vault file tampered with, or password incorrect."
-                );
-                std::process::exit(1);
+                if !vault.authenticate() {
+                    eprintln!(
+                        "Authentication failed! Vault file tampered with, or password incorrect."
+                    );
+                    std::process::exit(1);
+                }
             }
             let mut writer = vault.truncate_and_get_writer();
             io::copy(&mut stdin, &mut writer).unwrap();
