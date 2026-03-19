@@ -16,27 +16,22 @@ ssize_t lchacha_read(struct file* f, char __user* user_buf, size_t len, loff_t* 
         return -ERESTARTSYS;
     }
 
-    while (state->requested_zeroed_inputs != 0) {
-        if (len == 0) {
-            break;
+    if (state->cipher_output_only) {
+        while (len != 0) {
+            size_t chunk = min(CHACHA20_BLOCKLENGTH, len);
+            char buf[CHACHA20_BLOCKLENGTH] = {};
+
+            chacha_process(state, buf, chunk);
+            if ((status = copy_to_user(user_buf, buf, chunk))) {
+                dev_err(lchacha_dev, "Failed to copy output to user\n");
+                output = status;
+                goto unlock;
+            };
+
+            user_buf += chunk;
+            len -= chunk;
+            output += chunk;
         }
-        size_t chunk = min(CHACHA20_BLOCKLENGTH, len);
-        char buf[CHACHA20_BLOCKLENGTH] = {};
-
-        chacha_process(state, buf, chunk);
-        if ((status = copy_to_user(user_buf, buf, chunk))) {
-            dev_err(lchacha_dev, "Failed to copy output to user\n");
-            output = status;
-            goto unlock;
-        };
-
-        user_buf += chunk;
-        len -= chunk;
-        output += chunk;
-        state->requested_zeroed_inputs -= chunk;
-    }
-
-    if (len == 0) {
         goto unlock;
     }
 

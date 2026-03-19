@@ -34,7 +34,7 @@ extern atomic64_t lchacha_bytes_processed;
     u64 offset;                                                                                                                                                                                        \
     u16 len;                                                                                                                                                                                           \
     /* Allows the user to request the cipher directly, without XORing with input */                                                                                                                    \
-    u64 requested_zeroed_inputs;
+    bool cipher_output_only;
 
 #define BUF_CAPACITY (STATE_SIZE - sizeof(struct {STATE_FIELDS}))
 

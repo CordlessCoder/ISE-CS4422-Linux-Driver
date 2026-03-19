@@ -43,17 +43,11 @@ long int chacha_ioctl(struct file* f, unsigned int cmd, unsigned long args) {
         state->offset = CHACHA20_BLOCKLENGTH * counter;
         ChaCha20_set_counter(&state->ctx, counter);
     } break;
-    case CLEAR_ZEROES: {
-        state->requested_zeroed_inputs = 0;
+    case CLEAR_OUTPUT_ONLY: {
+        state->cipher_output_only = false;
     } break;
-    case REQUEST_ZEROES: {
-        u64 count;
-        status = copy_from_user(&count, (typeof(count)*)args, sizeof(count));
-        if (status) {
-            dev_err(lchacha_dev, "Error on REQUEST_ZEROES\n");
-            goto unlock;
-        }
-        state->requested_zeroed_inputs += count;
+    case SET_OUTPUT_ONLY: {
+        state->cipher_output_only = true;
     } break;
 
     default: {
