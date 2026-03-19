@@ -35,8 +35,8 @@ static int chacha_open(struct inode* _, struct file* f) {
     ChaCha20_set_key(&state->ctx, zero_key);
     mutex_init(&state->lock);
 
-    atomic64_inc(&lchacha_total_sessions);
-    atomic64_inc(&lchacha_active_sessions);
+    atomic64_inc(&lchacha_stats.total_sessions);
+    atomic64_inc(&lchacha_stats.active_sessions);
 
     return 0;
 }
@@ -53,7 +53,7 @@ static int chacha_release(struct inode* _, struct file* f) {
     memset(f->private_data, 0, STATE_SIZE);
 
     kfree(f->private_data);
-    atomic64_dec(&lchacha_active_sessions);
+    atomic64_dec(&lchacha_stats.active_sessions);
     return 0;
 }
 
