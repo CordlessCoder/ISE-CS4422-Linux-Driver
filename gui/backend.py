@@ -5,20 +5,21 @@ When Dillion's CLI is ready, replace the STUB functions with real
 subprocess.run() calls. The GUI code never changes — only this file.
 
 CLI contract agreed with Dillion:
-  passman-cli create-vault --vault <path>        (passphrase via stdin)
-  passman-cli unlock        --vault <path>        (passphrase via stdin) -> JSON
-  passman-cli save          --vault <path>        (passphrase + JSON via stdin)
-  passman-cli gen-password  --length <n>          -> plain string
+  PASSMAN_EXEC create-vault --vault <path>        (passphrase via stdin)
+  PASSMAN_EXEC unlock        --vault <path>        (passphrase via stdin) -> JSON
+  PASSMAN_EXEC save          --vault <path>        (passphrase + JSON via stdin)
+  PASSMAN_EXEC gen-password  --length <n>          -> plain string
   All return exit code 0 on success, 1 on failure.
 """
 
 import json
-import os
 import subprocess
 import uuid
 from pathlib import Path
 
-VAULT_PATH = Path.home() / ".config" / "passman" / "vault.json"
+PASSMAN_EXEC = "passman_cli"
+
+VAULT_PATH = Path.home() / ".config" / "passman" / "passman.vlt"
 
 # ── Stub data ──────────────────────────────────────────────────────────────────
 _MOCK_ENTRIES = [
@@ -86,7 +87,7 @@ def create_vault(passphrase: str) -> bool:
         return True
     VAULT_PATH.parent.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(
-        ["passman-cli", "create-vault", "--vault", str(VAULT_PATH)],
+        [PASSMAN_EXEC, "create-vault", "--vault", str(VAULT_PATH)],
         input=passphrase,
         text=True,
         capture_output=True,
@@ -105,7 +106,7 @@ def unlock(passphrase: str) -> list | None:
             return None
         return list(_MOCK_ENTRIES)
     result = subprocess.run(
-        ["passman-cli", "unlock", "--vault", str(VAULT_PATH)],
+        [PASSMAN_EXEC, "unlock", "--vault", str(VAULT_PATH)],
         input=passphrase,
         text=True,
         capture_output=True,
@@ -125,7 +126,7 @@ def save(passphrase: str, entries: list) -> bool:
         return True
     payload = json.dumps(entries)
     result = subprocess.run(
-        ["passman-cli", "save", "--vault", str(VAULT_PATH)],
+        [PASSMAN_EXEC, "save", "--vault", str(VAULT_PATH)],
         input=f"{passphrase}\n{payload}",
         text=True,
         capture_output=True,
@@ -138,10 +139,11 @@ def generate_password(length: int = 20) -> str:
     if USE_STUBS:
         import secrets
         import string
+
         alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
         return "".join(secrets.choice(alphabet) for _ in range(length))
     result = subprocess.run(
-        ["passman-cli", "gen-password", "--length", str(length)],
+        [PASSMAN_EXEC, "gen-password", "--length", str(length)],
         text=True,
         capture_output=True,
     )
