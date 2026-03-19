@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vault Manager</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Auth Screen -->
+        <div id="authScreen">
+            <h1>Vault Manager</h1>
+
+            <div class="tabs">
+                <button class="tab-button active" onclick="switchTab('login')">Login</button>
+                <button class="tab-button" onclick="switchTab('register')">Register</button>
+            </div>
+
+            <!-- Login Tab -->
+            <div id="loginTab">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="loginUsername" placeholder="enter username">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="enter password">
+                </div>
+                <button onclick="login()" style="width: 100%;">Login</button>
+                <div id="loginStatus" class="status"></div>
+            </div>
+
+            <!-- Register Tab -->
+            <div id="registerTab" class="hidden">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="registerUsername" placeholder="choose username">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="registerPassword" placeholder="choose password (min 8 chars)">
+                </div>
+                <button onclick="register()" style="width: 100%;">Register</button>
+                <div id="registerStatus" class="status"></div>
+            </div>
+        </div>
+
+        <!-- Main App Screen -->
+        <div id="appScreen" class="hidden">
+            <div class="user-info">
+                <span>Logged in as: <strong id="currentUser"></strong></span>
+                <button class="secondary" onclick="logout()">Logout</button>
+            </div>
+
+            <h1>Vault Manager</h1>
+
+            <div class="section">
+                <h2>Create Vault</h2>
+                <div class="form-group">
+                    <label>Vault Name</label>
+                    <input type="text" id="createName" placeholder="e.g., personal">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="createPassword" placeholder="enter password">
+                </div>
+                <button onclick="createVault()">Create</button>
+                <div id="createStatus" class="status"></div>
+            </div>
+
+            <div class="section">
+                <h2>Unlock Vault</h2>
+                <div class="form-group">
+                    <label>Vault Name</label>
+                    <input type="text" id="unlockName" placeholder="e.g., personal">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="unlockPassword" placeholder="enter password">
+                </div>
+                <button onclick="unlockVault()">Unlock</button>
+                <div id="unlockStatus" class="status"></div>
+                <div id="unlockOutput" class="output empty">data will appear here</div>
+            </div>
+
+            <div class="section">
+                <h2>Save to Vault</h2>
+                <div class="form-group">
+                    <label>Vault Name</label>
+                    <input type="text" id="saveName" placeholder="e.g., personal">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="savePassword" placeholder="enter password">
+                </div>
+                <div class="form-group">
+                    <label>Data</label>
+                    <textarea id="saveData" placeholder="enter data to save"></textarea>
+                </div>
+                <button onclick="saveVault()">Save</button>
+                <div id="saveStatus" class="status"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
