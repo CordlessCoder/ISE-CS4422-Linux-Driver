@@ -58,14 +58,6 @@ ssize_t lchacha_read(struct file* f, char __user* user_buf, size_t len, loff_t* 
         chacha_process(state, &state->buffer[start_in_buf], can_read);
         state->len -= can_read;
         atomic64_sub(can_read, &lchacha_stats.current_buffer_bytes);
-        // update peak buffer usage
-        u64 current = atomic64_read(&lchacha_stats.current_buffer_bytes);
-        u64 old_peak = atomic64_read(&lchacha_stats.peak_buffer_bytes);
-        while (current > old_peak) {
-            if (atomic64_cmpxchg(&lchacha_stats.peak_buffer_bytes, old_peak, current) == old_peak)
-                break;
-            old_peak = atomic64_read(&lchacha_stats.peak_buffer_bytes);
-        }
         
         if ((status = copy_to_user(user_buf, &state->buffer[start_in_buf], can_read))) {
             dev_err(lchacha_dev, "Failed to copy output to user\n");
