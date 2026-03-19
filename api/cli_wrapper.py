@@ -4,7 +4,7 @@ from pathlib import Path
 
 class CLIWrapper:
     def __init__(self, binary_path=None, vaults_dir="./vaults"):
-        self.binary_path = binary_path or "passman_rs"
+        self.binary_path = binary_path or "passman_cli"
         self.vaults_dir = Path(vaults_dir)
         self.vaults_dir.mkdir(exist_ok=True)
 
