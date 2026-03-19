@@ -190,15 +190,15 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
                         errors,
                     } = current.data;
                     format!(
-                        "Reads: {reads}\n\
-                 Writes: {writes}\n\
-                 IOCTLs: {ioctls}\n\
-                 Blocks: {blocks}\n\
-                 Bytes Processed: {bytes}\n\
-                 Errors: {errors}\n\
-                 Current Buffer: {buffered_bytes}\n\
-                 Active Sessions: {active_sessions}\n\
-                 Total Sessions: {total_sessions}",
+                        "Reads:           {reads}\n\
+                         Writes:          {writes}\n\
+                         IOCTLs:          {ioctls}\n\
+                         Blocks:          {blocks}\n\
+                         Bytes Processed: {bytes}\n\
+                         Errors:          {errors}\n\
+                         Current Buffer:  {buffered_bytes}\n\
+                         Active Sessions: {active_sessions}\n\
+                         Total Sessions:  {total_sessions}",
                     )
                 };
 
