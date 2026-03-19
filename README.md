@@ -42,9 +42,8 @@ close(encryption_device)
 
 ## Tasks
 - [x] ChaCha20 device driver(`/dev/chacha`)
-- [ ] Command-Line Interface password manager
-- [ ] Graphical Interface
+- [x] Command-Line Interface password manager
+- [x] Graphical Interface
 - [x] Statistics exposed via procfs(`/proc/chacha`)
-- [ ] Live procfs statistic visualization
-- [ ] DevOps: Compiling everything in a github action
-- [ ] DevOps: Linting with `clang-tidy`
+- [x] Live procfs statistic visualization
+
