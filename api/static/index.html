@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vault Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        h2 {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.loading {
+            background: #e7f3ff;
+            color: #004085;
+            border: 1px solid #b8daff;
+        }
+
+        .output {
+            background: #f8f8f8;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-family: monospace;
+            font-size: 13px;
+            word-break: break-all;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+            color: #333;
+        }
+
+        .output.empty {
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vault Manager</h1>
+
+        <div class="section">
+            <h2>Create Vault</h2>
+            <div class="form-group">
+                <label>Vault Name</label>
+                <input type="text" id="createName" placeholder="e.g., personal">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="createPassword" placeholder="enter password">
+            </div>
+            <button onclick="createVault()">Create</button>
+            <div id="createStatus" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h2>Unlock Vault</h2>
+            <div class="form-group">
+                <label>Vault Name</label>
+                <input type="text" id="unlockName" placeholder="e.g., personal">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="unlockPassword" placeholder="enter password">
+            </div>
+            <button onclick="unlockVault()">Unlock</button>
+            <div id="unlockStatus" class="status"></div>
+            <div id="unlockOutput" class="output empty">data will appear here</div>
+        </div>
+
+        <div class="section">
+            <h2>Save to Vault</h2>
+            <div class="form-group">
+                <label>Vault Name</label>
+                <input type="text" id="saveName" placeholder="e.g., personal">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="savePassword" placeholder="enter password">
+            </div>
+            <div class="form-group">
+                <label>Data</label>
+                <textarea id="saveData" placeholder="enter data to save"></textarea>
+            </div>
+            <button onclick="saveVault()">Save</button>
+            <div id="saveStatus" class="status"></div>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status show ${type}`;
+        }
+
+        function hideStatus(elementId) {
+            document.getElementById(elementId).className = 'status';
+        }
+
+        async function createVault() {
+            const name = document.getElementById('createName').value.trim();
+            const password = document.getElementById('createPassword').value;
+
+            if (!name || !password) {
+                showStatus('createStatus', 'Fill in all fields', 'error');
+                return;
+            }
+
+            showStatus('createStatus', 'Creating...', 'loading');
+
+            try {
+                const res = await fetch('/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showStatus('createStatus', data.message, 'success');
+                    document.getElementById('createName').value = '';
+                    document.getElementById('createPassword').value = '';
+                } else {
+                    showStatus('createStatus', data.error || 'Failed', 'error');
+                }
+            } catch (err) {
+                showStatus('createStatus', 'Network error', 'error');
+            }
+        }
+
+        async function unlockVault() {
+            const name = document.getElementById('unlockName').value.trim();
+            const password = document.getElementById('unlockPassword').value;
+
+            if (!name || !password) {
+                showStatus('unlockStatus', 'Fill in all fields', 'error');
+                return;
+            }
+
+            showStatus('unlockStatus', 'Unlocking...', 'loading');
+
+            try {
+                const res = await fetch('/unlock', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showStatus('unlockStatus', 'Success', 'success');
+                    const output = document.getElementById('unlockOutput');
+                    output.textContent = data.data;
+                    output.classList.remove('empty');
+                } else {
+                    showStatus('unlockStatus', data.error || 'Failed', 'error');
+                    document.getElementById('unlockOutput').className = 'output empty';
+                    document.getElementById('unlockOutput').textContent = 'data will appear here';
+                }
+            } catch (err) {
+                showStatus('unlockStatus', 'Network error', 'error');
+            }
+        }
+
+        async function saveVault() {
+            const name = document.getElementById('saveName').value.trim();
+            const password = document.getElementById('savePassword').value;
+            const data = document.getElementById('saveData').value;
+
+            if (!name || !password || !data) {
+                showStatus('saveStatus', 'Fill in all fields', 'error');
+                return;
+            }
+
+            showStatus('saveStatus', 'Saving...', 'loading');
+
+            try {
+                const res = await fetch('/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, password, data })
+                });
+
+                const result = await res.json();
+
+                if (res.ok) {
+                    showStatus('saveStatus', result.message, 'success');
+                    document.getElementById('saveData').value = '';
+                } else {
+                    showStatus('saveStatus', result.error || 'Failed', 'error');
+                }
+            } catch (err) {
+                showStatus('saveStatus', 'Network error', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
