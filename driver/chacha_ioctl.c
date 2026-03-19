@@ -59,6 +59,7 @@ long int chacha_ioctl(struct file* f, unsigned int cmd, unsigned long args) {
     } break;
 
     default: {
+        atomic_inc(&lchacha_stats.errors);
         status = -EOPNOTSUPP;
     } break;
     }
