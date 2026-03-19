@@ -88,7 +88,6 @@ impl OpenVaultWriter<'_> {
         if self.finalized_at_len == Some(self.vault.len) {
             return Ok(());
         }
-        // TODO: Make sure to write the hash, nonce etc.
         let mut hash: [u8; BLAKE2_HASH_SIZE] = [0u8; _];
         let mut blake_final = self.blake.clone();
         blake_final.update(self.vault.len.to_le_bytes());
@@ -131,7 +130,6 @@ impl OpenVaultWriter<'_> {
 
 impl io::Write for OpenVaultWriter<'_> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        // TODO: Hash, encrypt and write out the data
         let mut scratch = self.chacha_cache;
         let chunk = buf.len().min(scratch.len());
         scratch
