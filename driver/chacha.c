@@ -37,6 +37,10 @@ static int chacha_release(struct inode* _, struct file* f) {
         chacha_state* state = f->private_data;
         mutex_destroy(&state->lock);
     }
+
+    // Zero out memory to ensure no secrets remain in memory
+    memset(f->private_data, 0, STATE_SIZE);
+
     kfree(f->private_data);
     atomic64_dec(&lchacha_active_sessions);
     return 0;
