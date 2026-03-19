@@ -46,7 +46,6 @@ ssize_t lchacha_read(struct file* f, char __user* user_buf, size_t len, loff_t* 
     // Wait for buffer to become non-empty
     if ((status = wait_var_event_any_lock(&state->len, state->len != 0, &state->lock, mutex, TASK_INTERRUPTIBLE))) {
         atomic_inc(&lchacha_stats.errors);
-        mutex_unlock(&state->lock);
         return status;
     };
 
@@ -98,7 +97,6 @@ ssize_t lchacha_write(struct file* f, const char __user* user_buf, size_t len, l
     int status = 0;
     if ((status = wait_var_event_any_lock(&state->len, state->len != BUF_CAPACITY, &state->lock, mutex, TASK_INTERRUPTIBLE))) {
         atomic_inc(&lchacha_stats.errors);
-        mutex_unlock(&state->lock);
         return status;
     };
     size_t output = 0;
