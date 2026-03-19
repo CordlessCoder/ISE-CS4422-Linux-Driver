@@ -18,8 +18,8 @@ struct chacha_stats lchacha_stats = {
     .decrypts = ATOMIC_INIT(0),
     
     .ioctls = ATOMIC_INIT(0),
-    
     .current_buffer_bytes = ATOMIC_INIT(0),
+    .peak_buffer_bytes = ATOMIC_INIT(0),
 };
 
 static int chacha_open(struct inode* _, struct file* f) {
