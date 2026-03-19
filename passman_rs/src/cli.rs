@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -24,7 +24,7 @@ pub enum Commands {
         /// Skip performing the authentication check - does not ensure the vault is valid and
         /// hasn't been tampered with.
         #[arg(long)]
-        skip_auth: bool
+        skip_auth: bool,
     },
     /// Write the provided data to a vault file
     Save {
@@ -34,21 +34,12 @@ pub enum Commands {
         /// Skip performing the authentication check - does not ensure the vault is valid and
         /// hasn't been tampered with.
         #[arg(long)]
-        skip_auth: bool
+        skip_auth: bool,
     },
-    /// Generate a secure password of a given length
-    GenPassword {
-        /// The password generation strategy to use
-        #[arg(short, long, default_value = "random-alphanumeric")]
-        strategy: PasswordGenStrategy,
-        #[arg(short, long)]
-        length: usize,
+    /// Display live kernel usage statistics
+    Stats {
+        /// Polling interval in seconds
+        #[arg(short, long, default_value_t = 0.2)]
+        interval: f64,
     },
-}
-
-#[derive(Debug, Clone, ValueEnum, PartialEq, Eq, PartialOrd, Ord, Default)]
-pub enum PasswordGenStrategy {
-    #[default]
-    RandomAlphanumeric,
-    Dictionary,
 }
