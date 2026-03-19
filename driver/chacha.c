@@ -45,6 +45,7 @@ static int chacha_release(struct inode* _, struct file* f) {
     dev_dbg(lchacha_dev, "Release is called\n");
     {
         chacha_state* state = f->private_data;
+        atomic64_sub(state->len, &lchacha_stats.current_buffer_bytes);
         mutex_destroy(&state->lock);
     }
 
