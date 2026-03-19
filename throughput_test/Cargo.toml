@@ -1,5 +1,5 @@
 [package]
-name = "chatest"
+name = "chacha_throughput_test"
 version = "0.1.0"
 edition = "2024"
 
