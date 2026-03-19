@@ -45,10 +45,13 @@ struct chacha_stats{
     atomic_t encrypts;
     atomic_t decrypts;
     atomic_t errors;
-    atomic_t bytes_processed;
+
+    atomic_t ioctls;
+
+    atomic_t current_buffer_bytes;
 };
 
-extern struct chacha_stats stats;
+extern struct chacha_stats lchacha_stats;
 
 typedef struct {
     STATE_FIELDS
