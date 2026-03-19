@@ -57,6 +57,7 @@ ssize_t lchacha_read(struct file* f, char __user* user_buf, size_t len, loff_t* 
         dev_dbg(lchacha_dev, "Reading %zu bytes starting at %zu", can_read, start_in_buf);
         chacha_process(state, &state->buffer[start_in_buf], can_read);
         state->len -= can_read;
+        atomic64_sub(can_read, &lchacha_stats.current_buffer_bytes);
         if ((status = copy_to_user(user_buf, &state->buffer[start_in_buf], can_read))) {
             dev_err(lchacha_dev, "Failed to copy output to user\n");
             output = status;
@@ -116,6 +117,7 @@ ssize_t lchacha_write(struct file* f, const char __user* user_buf, size_t len, l
         len -= to_copy;
         output += to_copy;
         state->len += to_copy;
+        atomic64_add(to_copy, &lchacha_stats.current_buffer_bytes);
     }
     wake_up_var_locked(&state->len, &state->lock);
     mutex_unlock(&state->lock);
@@ -195,6 +197,7 @@ loff_t lchacha_lseek(struct file* f, loff_t offset, int whence) {
     } break;
     }
 
+    atomic64_sub(state->len, &lchacha_stats.current_buffer_bytes);
     state->len = 0;
 
     dev_dbg(lchacha_dev, "New offset: %lld\n", state->offset);
