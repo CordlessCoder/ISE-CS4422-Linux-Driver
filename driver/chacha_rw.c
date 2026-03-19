@@ -26,9 +26,9 @@ ssize_t lchacha_read(struct file* f, char __user* user_buf, size_t len, loff_t* 
         char buf[CHACHA20_BLOCKLENGTH] = {};
 
         chacha_process(state, buf, chunk);
-        atomic_inc(&lchacha_stats.decrypts);
         if ((status = copy_to_user(user_buf, buf, chunk))) {
             dev_err(lchacha_dev, "Failed to copy output to user\n");
+            atomic_inc(&lchacha_stats.errors);
             output = status;
             goto unlock;
         };
@@ -45,6 +45,8 @@ ssize_t lchacha_read(struct file* f, char __user* user_buf, size_t len, loff_t* 
 
     // Wait for buffer to become non-empty
     if ((status = wait_var_event_any_lock(&state->len, state->len != 0, &state->lock, mutex, TASK_INTERRUPTIBLE))) {
+        atomic_inc(&lchacha_stats.errors);
+        mutex_unlock(&state->lock);
         return status;
     };
 
@@ -59,7 +61,6 @@ ssize_t lchacha_read(struct file* f, char __user* user_buf, size_t len, loff_t* 
         }
         dev_dbg(lchacha_dev, "Reading %zu bytes starting at %zu", can_read, start_in_buf);
         chacha_process(state, &state->buffer[start_in_buf], can_read);
-        atomic_inc(&lchacha_stats.decrypts);
         state->len -= can_read;
         atomic64_sub(can_read, &lchacha_stats.current_buffer_bytes);
         
@@ -91,13 +92,13 @@ ssize_t lchacha_write(struct file* f, const char __user* user_buf, size_t len, l
     }
 
     atomic_inc(&lchacha_stats.writes);
-    atomic_inc(&lchacha_stats.encrypts);
-    
     dev_dbg(lchacha_dev, "write(%zu) called", len);
 
     // Wait for buffer to become non-full
     int status = 0;
     if ((status = wait_var_event_any_lock(&state->len, state->len != BUF_CAPACITY, &state->lock, mutex, TASK_INTERRUPTIBLE))) {
+        atomic_inc(&lchacha_stats.errors);
+        mutex_unlock(&state->lock);
         return status;
     };
     size_t output = 0;
@@ -118,6 +119,7 @@ ssize_t lchacha_write(struct file* f, const char __user* user_buf, size_t len, l
         dev_dbg(lchacha_dev, "Writing %zu bytes starting at %zu", to_copy, writable_start);
         if (copy_from_user(&state->buffer[writable_start], user_buf, to_copy)) {
             dev_err(lchacha_dev, "Failed to copy input to write() from user\n");
+            atomic_inc(&lchacha_stats.errors);
             output = -EFAULT;
             break;
         };
@@ -127,14 +129,7 @@ ssize_t lchacha_write(struct file* f, const char __user* user_buf, size_t len, l
         output += to_copy;
         state->len += to_copy;
         atomic64_add(to_copy, &lchacha_stats.current_buffer_bytes);
-        // update peak buffer usage
-        u64 current = atomic64_read(&lchacha_stats.current_buffer_bytes);
-        u64 old_peak = atomic64_read(&lchacha_stats.peak_buffer_bytes);
-        while (current > old_peak) {
-            if (atomic64_cmpxchg(&lchacha_stats.peak_buffer_bytes, old_peak, current) == old_peak)
-                break;
-            old_peak = atomic64_read(&lchacha_stats.peak_buffer_bytes);
-        }
+        
     }
     wake_up_var_locked(&state->len, &state->lock);
     mutex_unlock(&state->lock);
@@ -209,6 +204,7 @@ loff_t lchacha_lseek(struct file* f, loff_t offset, int whence) {
         goto unlock;
     } break;
     default: {
+        atomic_inc(&lchacha_stats.errors);
         status = -EINVAL;
         goto unlock;
     } break;
