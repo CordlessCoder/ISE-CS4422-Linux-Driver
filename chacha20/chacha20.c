@@ -1,11 +1,8 @@
+// Based on chacha-ref.c version 20080118, by D. J. Bernstein. Public domain.
+
 #include "linux-crypt.h"
 #include <linux/string.h>
 #include "chacha20.h"
-/*
-chacha-ref.c version 20080118
-D. J. Bernstein
-Public domain.
-*/
 
 #define ROTATE(v, c) (ROTL32(v, c))
 #define XOR(v, w) ((v) ^ (w))
