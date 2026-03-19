@@ -62,7 +62,7 @@ fn main() {
                         _ = chacha.read(&mut buf).unwrap();
                     }
                 } else {
-                    let mut buf = [0; BUF_SIZE / 4];
+                    let mut buf = [0; BUF_SIZE];
                     while !STOP_FLAG.load(std::sync::atomic::Ordering::Relaxed) {
                         chacha.write_all(&buf).unwrap();
                         chacha.read_exact(&mut buf).unwrap();
