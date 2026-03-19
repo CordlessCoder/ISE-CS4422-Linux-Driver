@@ -10,8 +10,8 @@ dependencies = [
 [project.scripts]
 passman-gui = "main:main"
 
-[tool.uv]
-dev-dependencies = []
+[tool.hatch.build.targets.wheel]
+packages = ["."]
 
 [build-system]
 requires = ["hatchling"]
