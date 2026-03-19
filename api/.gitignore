@@ -29,3 +29,7 @@ ENV/
 *.swo
 *~
 .DS_Store
+
+vaults/
+users.json
+sessions.json
