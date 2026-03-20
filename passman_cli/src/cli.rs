@@ -39,7 +39,7 @@ pub enum Commands {
     /// Display live kernel usage statistics
     Stats {
         /// Polling interval in seconds
-        #[arg(short, long, default_value_t = 0.2)]
+        #[arg(short, long, default_value_t = 0.05)]
         interval: f64,
     },
 }

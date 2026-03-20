@@ -15,7 +15,7 @@ mod fetch_stats;
 
 pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
     // Keep history for last N points
-    const MAX_POINTS: usize = 50;
+    let mut max_points = 100;
     let mut history_reads: Vec<(f64, f64)> = Vec::new();
     let mut history_writes: Vec<(f64, f64)> = Vec::new();
     let mut history_ioctls: Vec<(f64, f64)> = Vec::new();
@@ -41,12 +41,12 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
                 (&mut history_blocks, diff.blocks * 64),
                 (&mut history_errors, diff.errors),
             ] {
-                if queue.len() >= MAX_POINTS {
+                if queue.len() >= max_points {
                     queue.remove(0);
                 }
                 queue.push((time, compute_per_second(value)));
             }
-            if history_sessions.len() >= MAX_POINTS {
+            if history_sessions.len() >= max_points {
                 history_sessions.remove(0);
             }
             history_sessions.push((time, current.data.active_sessions as f64));
@@ -54,6 +54,7 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
             // Layout: upper = chart, lower = raw stats
             terminal.draw(|f| {
                 let area = f.area();
+                max_points = area.width as usize - 9;
                 let row_count = 2;
                 let col_count = 2;
                 let col_constraints = vec![Constraint::Ratio(1, row_count); row_count as usize];
@@ -88,12 +89,12 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
                 let chart_throughput = Chart::new(vec![
                     Dataset::default()
                         .name("Bytes/sec")
-                        .marker(ratatui::symbols::Marker::Braille)
+                        .marker(ratatui::symbols::Marker::Octant)
                         .style(Style::default().fg(Color::Blue))
                         .data(&history_bytes),
                     Dataset::default()
                         .name("Blocks/sec")
-                        .marker(ratatui::symbols::Marker::Braille)
+                        .marker(ratatui::symbols::Marker::Octant)
                         .style(Style::default().fg(Color::Cyan))
                         .data(&history_blocks),
                 ])
@@ -103,7 +104,7 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
                 .x_axis(
                     Axis::default()
                         .title("Time")
-                        .bounds([time - MAX_POINTS as f64 * interval.as_secs_f64(), time]),
+                        .bounds([time - max_points as f64 * interval.as_secs_f64(), time]),
                 )
                 .y_axis(
                     Axis::default()
@@ -118,17 +119,17 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
                 let chart_ops = Chart::new(vec![
                     Dataset::default()
                         .name("Reads/sec")
-                        .marker(ratatui::symbols::Marker::Braille)
+                        .marker(ratatui::symbols::Marker::Octant)
                         .style(Style::default().fg(Color::Red))
                         .data(&history_reads),
                     Dataset::default()
                         .name("Writes/sec")
-                        .marker(ratatui::symbols::Marker::Braille)
+                        .marker(ratatui::symbols::Marker::Octant)
                         .style(Style::default().fg(Color::Blue))
                         .data(&history_writes),
                     Dataset::default()
                         .name("IOCTLs/sec")
-                        .marker(ratatui::symbols::Marker::Braille)
+                        .marker(ratatui::symbols::Marker::Octant)
                         .style(Style::default().fg(Color::Yellow))
                         .data(&history_ioctls),
                 ])
@@ -138,7 +139,7 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
                 .x_axis(
                     Axis::default()
                         .title("Time")
-                        .bounds([time - MAX_POINTS as f64 * interval.as_secs_f64(), time]),
+                        .bounds([time - max_points as f64 * interval.as_secs_f64(), time]),
                 )
                 .y_axis(
                     Axis::default()
@@ -151,12 +152,12 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
                 let chart_sessions = Chart::new(vec![
                     Dataset::default()
                         .name("Errors/sec")
-                        .marker(ratatui::symbols::Marker::Braille)
+                        .marker(ratatui::symbols::Marker::Octant)
                         .style(Style::default().fg(Color::Red))
                         .data(&history_errors),
                     Dataset::default()
                         .name("Active sessions")
-                        .marker(ratatui::symbols::Marker::Braille)
+                        .marker(ratatui::symbols::Marker::Octant)
                         .style(Style::default().fg(Color::Blue))
                         .data(&history_sessions),
                 ])
@@ -166,7 +167,7 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
                 .x_axis(
                     Axis::default()
                         .title("Time")
-                        .bounds([time - MAX_POINTS as f64 * interval.as_secs_f64(), time]),
+                        .bounds([time - max_points as f64 * interval.as_secs_f64(), time]),
                 )
                 .y_axis(
                     Axis::default()
