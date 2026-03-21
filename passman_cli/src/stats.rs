@@ -13,6 +13,8 @@ use std::{
 
 mod fetch_stats;
 
+const MARKER_STYLE: ratatui::symbols::Marker = ratatui::symbols::Marker::Braille;
+
 pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
     // Keep history for last N points
     let mut max_points = 100;
@@ -89,12 +91,12 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
                 let chart_throughput = Chart::new(vec![
                     Dataset::default()
                         .name("Bytes/sec")
-                        .marker(ratatui::symbols::Marker::Octant)
+                        .marker(MARKER_STYLE)
                         .style(Style::default().fg(Color::Blue))
                         .data(&history_bytes),
                     Dataset::default()
                         .name("Blocks/sec")
-                        .marker(ratatui::symbols::Marker::Octant)
+                        .marker(MARKER_STYLE)
                         .style(Style::default().fg(Color::Cyan))
                         .data(&history_blocks),
                 ])
@@ -119,17 +121,17 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
                 let chart_ops = Chart::new(vec![
                     Dataset::default()
                         .name("Reads/sec")
-                        .marker(ratatui::symbols::Marker::Octant)
+                        .marker(MARKER_STYLE)
                         .style(Style::default().fg(Color::Red))
                         .data(&history_reads),
                     Dataset::default()
                         .name("Writes/sec")
-                        .marker(ratatui::symbols::Marker::Octant)
+                        .marker(MARKER_STYLE)
                         .style(Style::default().fg(Color::Blue))
                         .data(&history_writes),
                     Dataset::default()
                         .name("IOCTLs/sec")
-                        .marker(ratatui::symbols::Marker::Octant)
+                        .marker(MARKER_STYLE)
                         .style(Style::default().fg(Color::Yellow))
                         .data(&history_ioctls),
                 ])
@@ -152,12 +154,12 @@ pub fn run_dashboard(interval: Duration) -> Result<(), io::Error> {
                 let chart_sessions = Chart::new(vec![
                     Dataset::default()
                         .name("Errors/sec")
-                        .marker(ratatui::symbols::Marker::Octant)
+                        .marker(MARKER_STYLE)
                         .style(Style::default().fg(Color::Red))
                         .data(&history_errors),
                     Dataset::default()
                         .name("Active sessions")
-                        .marker(ratatui::symbols::Marker::Octant)
+                        .marker(MARKER_STYLE)
                         .style(Style::default().fg(Color::Blue))
                         .data(&history_sessions),
                 ])

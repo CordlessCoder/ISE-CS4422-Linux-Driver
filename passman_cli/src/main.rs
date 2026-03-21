@@ -27,14 +27,13 @@ fn main() {
             let (password, _) = get_password_and_stdin();
             let vault = ClosedVault::open(&path).unwrap();
             let mut vault = vault.unlock(&password).unwrap();
-            if !skip_auth {
-                if !vault.authenticate() {
+            if !skip_auth
+                && !vault.authenticate() {
                     eprintln!(
                         "Authentication failed! Vault file tampered with, or password incorrect."
                     );
                     std::process::exit(1);
                 }
-            }
             let mut reader = vault.get_reader();
             io::copy(&mut reader, &mut io::stdout().lock()).unwrap();
         }
@@ -42,13 +41,11 @@ fn main() {
             let (password, mut stdin) = get_password_and_stdin();
             let vault = ClosedVault::open(&path).unwrap();
             let mut vault = vault.unlock(&password).unwrap();
-            if !skip_auth {
-                if !vault.authenticate() {
-                    eprintln!(
-                        "Authentication failed! Vault file tampered with, or password incorrect."
-                    );
-                    std::process::exit(1);
-                }
+            if !skip_auth && !vault.authenticate() {
+                eprintln!(
+                    "Authentication failed! Vault file tampered with, or password incorrect."
+                );
+                std::process::exit(1);
             }
             let mut writer = vault.truncate_and_get_writer();
             io::copy(&mut stdin, &mut writer).unwrap();
